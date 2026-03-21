@@ -68,6 +68,8 @@ const staticBurstElement = document.getElementById("static-burst");
 const installCardElement = document.getElementById("install-card");
 const installStatusElement = document.getElementById("install-status");
 const installAppButton = document.getElementById("install-app");
+const welcomeScreenElement = document.getElementById("welcome-screen");
+const enterSiteButton = document.getElementById("enter-site");
 
 const NAME_STORAGE_KEY = "ouija-online-name";
 
@@ -97,6 +99,14 @@ function setStatus(text, isError = false) {
 
 function wait(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function dismissWelcomeScreen() {
+  if (!welcomeScreenElement) {
+    return;
+  }
+
+  welcomeScreenElement.classList.add("is-hidden");
 }
 
 function isIosDevice() {
@@ -605,6 +615,10 @@ installAppButton.addEventListener("click", () => {
   handleInstallClick();
 });
 
+enterSiteButton.addEventListener("click", () => {
+  dismissWelcomeScreen();
+});
+
 roomInput.addEventListener("input", () => {
   const roomId = normalizeRoomId(roomInput.value);
   roomInput.value = roomId;
@@ -724,6 +738,12 @@ window.addEventListener("appinstalled", () => {
   deferredInstallPrompt = null;
   updateInstallUi();
   setStatus("Ouija Online was installed on this device.");
+});
+
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    dismissWelcomeScreen();
+  }
 });
 
 const roomFromUrl = normalizeRoomId(new URLSearchParams(window.location.search).get("room"));

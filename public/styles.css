@@ -31,6 +31,7 @@ body {
 body {
   min-height: 100vh;
   min-height: 100dvh;
+  overflow: hidden;
 }
 
 button,
@@ -38,12 +39,48 @@ input {
   font: inherit;
 }
 
+.welcome-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at center, rgba(64, 28, 18, 0.52), transparent 40%),
+    rgba(8, 6, 5, 0.9);
+  backdrop-filter: blur(8px);
+  transition: opacity 260ms ease, visibility 260ms ease;
+}
+
+.welcome-screen.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.welcome-panel {
+  width: min(100%, 420px);
+  padding: 28px 24px;
+  border: 1px solid rgba(242, 212, 164, 0.16);
+  border-radius: 28px;
+  background: rgba(26, 17, 13, 0.9);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+
+.welcome-title {
+  margin: 12px 0 22px;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 0.95;
+}
+
 .app-shell {
   display: grid;
   grid-template-columns: minmax(260px, 320px) minmax(0, 1fr) minmax(260px, 320px);
   gap: clamp(14px, 2vw, 24px);
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
   max-width: 1680px;
   margin: 0 auto;
   padding:
@@ -65,9 +102,12 @@ input {
 .side-panel {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 24px;
+  gap: 16px;
+  min-height: 0;
   min-width: 0;
+  overflow: auto;
+  padding: 20px;
+  scrollbar-width: thin;
 }
 
 .eyebrow {
@@ -86,7 +126,7 @@ h2 {
 }
 
 h1 {
-  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-size: clamp(2.1rem, 3.3vw, 3.4rem);
   line-height: 0.95;
 }
 
@@ -106,7 +146,7 @@ h2 {
 .join-form,
 .question-form {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .inline-actions,
@@ -174,12 +214,12 @@ button:hover {
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 18px;
+  padding: 16px;
 }
 
 .status-value {
-  min-height: 3.2em;
-  margin: 8px 0 16px;
+  min-height: 2.2em;
+  margin: 6px 0 12px;
   font-size: 1.1rem;
   color: var(--ink);
 }
@@ -216,7 +256,7 @@ button:hover {
 .whisper-line {
   position: relative;
   z-index: 2;
-  margin: 18px auto 0;
+  margin: 10px auto 0;
   width: min(92%, 540px);
   text-align: center;
   letter-spacing: 0.18em;
@@ -229,15 +269,21 @@ button:hover {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 0;
   min-width: 0;
 }
 
 .board-wrap {
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   width: 100%;
+  height: 100%;
   max-width: min(100%, 1040px);
-  padding: 20px;
+  max-height: calc(100dvh - 28px);
+  padding: 16px;
 }
 
 .board-wrap::before,
@@ -336,7 +382,9 @@ button:hover {
 .board {
   position: relative;
   overflow: hidden;
-  width: 100%;
+  width: min(100%, calc((100dvh - 170px) * 0.83));
+  max-height: calc(100dvh - 190px);
+  margin: 0 auto;
   aspect-ratio: 1 / 1.2;
   border-radius: 42px;
   padding: clamp(24px, 4vw, 42px) clamp(16px, 3vw, 32px) clamp(18px, 3vw, 32px);
@@ -494,8 +542,8 @@ button:hover {
 .history {
   display: grid;
   gap: 10px;
-  margin-top: 16px;
-  max-height: min(44vh, 360px);
+  margin-top: 12px;
+  max-height: min(24vh, 200px);
   overflow: auto;
 }
 
@@ -567,12 +615,19 @@ button:disabled {
 }
 
 @media (max-width: 1120px) {
+  body {
+    overflow: auto;
+  }
+
   .app-shell {
     grid-template-columns: minmax(0, 1fr);
+    height: auto;
   }
 
   .board {
     aspect-ratio: 1 / 1.05;
+    width: 100%;
+    max-height: none;
   }
 
   .history {
@@ -597,6 +652,7 @@ button:disabled {
   .board-wrap {
     max-width: 860px;
     margin: 0 auto;
+    max-height: none;
   }
 
   .candle {
@@ -617,6 +673,7 @@ button:disabled {
 
   .board {
     aspect-ratio: 1 / 1.14;
+    width: 100%;
     padding: 22px 12px 16px;
     border-radius: 28px;
   }
