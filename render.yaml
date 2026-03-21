@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: ouija-online
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /status
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: NODE_VERSION
+        value: 22

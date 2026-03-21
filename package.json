@@ -1,0 +1,23 @@
+{
+  "name": "ouija-game",
+  "version": "1.0.0",
+  "description": "A multiplayer Ouija-style browser game.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "generate:icons": "python3 scripts/generate_icons.py"
+  },
+  "keywords": [
+    "ouija",
+    "multiplayer",
+    "socket.io",
+    "game"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
+}
