@@ -68,6 +68,7 @@ const staticBurstElement = document.getElementById("static-burst");
 const installCardElement = document.getElementById("install-card");
 const installStatusElement = document.getElementById("install-status");
 const installAppButton = document.getElementById("install-app");
+const installHelpElement = document.getElementById("install-help");
 const welcomeScreenElement = document.getElementById("welcome-screen");
 const enterSiteButton = document.getElementById("enter-site");
 const welcomeTitleElement = document.getElementById("welcome-title");
@@ -112,7 +113,7 @@ let isDragging = false;
 let isSpiritMoving = false;
 let latestCursor = { x: 50, y: 72 };
 let currentSpiritState = {
-  enabled: false,
+  enabled: true,
   active: false,
   name: "The Veil",
   lastAnswer: ""
@@ -434,12 +435,10 @@ function seedWelcomeScreen() {
 
 function dismissWelcomeScreen() {
   if (!welcomeScreenElement || welcomeClosing || welcomeScreenElement.classList.contains("is-hidden")) {
-    stopWelcomeAudio();
     return;
   }
 
   clearWelcomeTimers();
-  stopWelcomeAudio();
   flashWelcomeOverlay();
   flashWelcomeOmen(true);
   warnWelcomeTitle();
@@ -466,8 +465,22 @@ function isIosDevice() {
   return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
 }
 
+function isSafariBrowser() {
+  const userAgent = window.navigator.userAgent.toLowerCase();
+  return /safari/.test(userAgent) && !/crios|fxios|edgios|opr\//.test(userAgent);
+}
+
 function isStandaloneMode() {
   return window.matchMedia("(display-mode: standalone)").matches || Boolean(window.navigator.standalone);
+}
+
+function setInstallHelp(text = "", visible = false) {
+  if (!installHelpElement) {
+    return;
+  }
+
+  installHelpElement.hidden = !visible;
+  installHelpElement.textContent = visible ? text : "";
 }
 
 function updateInstallUi() {
@@ -479,6 +492,7 @@ function updateInstallUi() {
     installStatusElement.textContent = "Installed. Open it from your home screen or desktop like an app.";
     installAppButton.textContent = "Installed";
     installAppButton.disabled = true;
+    setInstallHelp();
     return;
   }
 
@@ -487,17 +501,27 @@ function updateInstallUi() {
   if (deferredInstallPrompt) {
     installStatusElement.textContent = "Install on this device for a full-screen board and faster relaunch.";
     installAppButton.textContent = "Install";
+    setInstallHelp();
     return;
   }
 
   if (isIosDevice()) {
-    installStatusElement.textContent = "On iPhone or iPad, use Safari Share and choose Add to Home Screen.";
-    installAppButton.textContent = "Show Steps";
+    if (isSafariBrowser()) {
+      installStatusElement.textContent = "On iPhone or iPad, install works from Safari with Add to Home Screen.";
+      installAppButton.textContent = "Show Steps";
+      setInstallHelp("1. Tap Share in Safari.\n2. Choose Add to Home Screen.\n3. If shown, keep Open as Web App on.");
+      return;
+    }
+
+    installStatusElement.textContent = "On iPhone, install only works from Safari, not Firefox or Chrome.";
+    installAppButton.textContent = "Safari Only";
+    setInstallHelp("Open this same link in Safari, then use Share > Add to Home Screen.");
     return;
   }
 
   installStatusElement.textContent = "Install is available in supported browsers once the app is recognized as installable.";
   installAppButton.textContent = "Install";
+  setInstallHelp();
 }
 
 async function handleInstallClick() {
@@ -520,9 +544,18 @@ async function handleInstallClick() {
   }
 
   if (isIosDevice()) {
+    if (isSafariBrowser()) {
+      installStatusElement.textContent =
+        "In Safari, tap Share, then Add to Home Screen to install Ouija Online.";
+      setInstallHelp("1. Tap Share.\n2. Tap Add to Home Screen.\n3. Save it, then open it from the Home Screen.");
+      setStatus("Safari on iPhone needs Share > Add to Home Screen for install.");
+      return;
+    }
+
     installStatusElement.textContent =
-      "In Safari, tap Share, then Add to Home Screen to install Ouija Online.";
-    setStatus("Use Safari Share > Add to Home Screen to install on iPhone or iPad.");
+      "Open this page in Safari first. iPhone browsers cannot trigger install directly.";
+    setInstallHelp("Copy this link into Safari, then use Share > Add to Home Screen.");
+    setStatus("iPhone install only works from Safari.", true);
     return;
   }
 
@@ -618,6 +651,11 @@ async function startWelcomeAudio() {
     loopTimer: null
   };
 
+  soundEnabled = true;
+  if (masterGain) {
+    masterGain.gain.setTargetAtTime(0.085, audioContext.currentTime, 0.45);
+  }
+  toggleSoundButton.textContent = "Sound On";
   scheduleWelcomeMusicLoop(220);
 }
 
@@ -932,19 +970,16 @@ function updateSpiritUi(spirit) {
   const isActive = Boolean(currentSpiritState.active);
   const lastAnswer = currentSpiritState.lastAnswer || "No reply yet.";
 
-  toggleSpiritButton.textContent = isEnabled ? "Dismiss" : "Summon";
-  spiritStatusElement.textContent = isEnabled
-    ? isActive
-      ? `${currentSpiritState.name} is moving through the board.`
-      : `${currentSpiritState.name} is waiting for the next question.`
-    : "Summon a fictional presence for eerie solo replies.";
+  toggleSpiritButton.textContent = "Always On";
+  toggleSpiritButton.disabled = true;
+  spiritStatusElement.textContent = isActive
+    ? `${currentSpiritState.name} is reading the room and spelling an answer.`
+    : `${currentSpiritState.name} listens in every room and answers every question.`;
   spiritAnswerElement.textContent = lastAnswer;
   setWhisperLine(
-    isEnabled
-      ? isActive
-        ? `${currentSpiritState.name} moves beneath your hands.`
-        : `${currentSpiritState.name} waits in the static.`
-      : "The board is still."
+    isActive
+      ? `${currentSpiritState.name} moves beneath your hands.`
+      : `${currentSpiritState.name} waits in the static.`
   );
 
   if (!isActive && !isSpiritMoving) {
@@ -1102,8 +1137,9 @@ async function toggleSound() {
 
     soundEnabled = true;
     masterGain.gain.setTargetAtTime(0.12, audioContext.currentTime, 0.35);
+    await startWelcomeAudio();
     toggleSoundButton.textContent = "Sound On";
-    setStatus("Ambient sound enabled.");
+    setStatus("Haunted score enabled.");
     return;
   }
 
@@ -1113,8 +1149,9 @@ async function toggleSound() {
     masterGain.gain.setTargetAtTime(0.0001, audioContext.currentTime, 0.2);
   }
 
+  stopWelcomeAudio();
   toggleSoundButton.textContent = "Sound Off";
-  setStatus("Ambient sound muted.");
+  setStatus("Haunted score muted.");
 }
 
 async function animateSpiritSequence({
@@ -1226,12 +1263,7 @@ copyInviteButton.addEventListener("click", async () => {
 });
 
 toggleSpiritButton.addEventListener("click", () => {
-  if (!currentRoomId) {
-    setStatus("Join a room before summoning the solo presence.", true);
-    return;
-  }
-
-  socket.emit("spirit:toggle", { enabled: !currentSpiritState.enabled });
+  setStatus("The Veil is always listening in every room.");
 });
 
 toggleSoundButton.addEventListener("click", () => {

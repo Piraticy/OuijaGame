@@ -76,9 +76,9 @@
 
         <div class="status-card">
           <p class="status-label">Current Question</p>
-          <p id="question-display" class="status-value">Will the spirits answer?</p>
+          <p id="question-display" class="status-value">Ask, and The Veil will answer.</p>
           <form id="question-form" class="question-form">
-            <input id="question-input" maxlength="120" placeholder="Ask the board a question" />
+            <input id="question-input" maxlength="120" placeholder="Ask the veil a question" />
             <button type="submit">Send</button>
           </form>
         </div>
@@ -86,19 +86,24 @@
         <div class="status-card spirit-card">
           <div class="card-header">
             <div>
-              <p class="status-label">Solo Seance</p>
+              <p class="status-label">The Veil</p>
               <p id="spirit-status" class="presence-status">
-                Summon a fictional presence for eerie solo replies.
+                The Veil answers every room, even when multiple players join.
               </p>
             </div>
-            <button id="toggle-spirit" class="ghost-button secondary-button" type="button">
-              Summon
+            <button
+              id="toggle-spirit"
+              class="ghost-button secondary-button"
+              type="button"
+              disabled
+            >
+              Always On
             </button>
           </div>
           <div class="card-header">
             <div>
               <p class="status-label">Sound</p>
-              <p class="presence-status">Optional ambient audio and spirit tones.</p>
+              <p class="presence-status">Continuous haunted score and spirit tones.</p>
             </div>
             <button id="toggle-sound" class="ghost-button secondary-button" type="button">
               Sound Off
@@ -118,6 +123,7 @@
               Install
             </button>
           </div>
+          <p id="install-help" class="install-help" hidden></p>
         </div>
       </section>
 

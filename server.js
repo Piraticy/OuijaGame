@@ -124,10 +124,10 @@ function createRoomState(roomId) {
     roomId,
     players: new Map(),
     cursor: { x: 50, y: 72 },
-    question: "Will the spirits answer?",
+    question: "Ask, and The Veil will answer.",
     history: [],
     spirit: {
-      enabled: false,
+      enabled: true,
       active: false,
       name: SPIRIT_NAME,
       lastAnswer: ""
@@ -423,10 +423,6 @@ function createSpiritResponse(question) {
 }
 
 function beginSpiritSequence(room, askedBy, question) {
-  if (!room.spirit.enabled) {
-    return;
-  }
-
   clearRoomTimers(room);
 
   const response = createSpiritResponse(question);
@@ -523,9 +519,7 @@ io.on("connection", (socket) => {
     trimHistory(room);
     broadcastRoom(room);
 
-    if (room.spirit.enabled) {
-      beginSpiritSequence(room, player?.name || "Someone", safeQuestion);
-    }
+    beginSpiritSequence(room, player?.name || "Someone", safeQuestion);
   });
 
   socket.on("spirit:toggle", ({ enabled }) => {
@@ -535,16 +529,9 @@ io.on("connection", (socket) => {
       return;
     }
 
-    room.spirit.enabled = Boolean(enabled);
+    room.spirit.enabled = true;
     room.spirit.active = false;
-
-    if (!room.spirit.enabled) {
-      room.spirit.lastAnswer = "";
-      clearRoomTimers(room);
-      room.history.push(`${room.spirit.name} falls silent.`);
-    } else {
-      room.history.push(`${room.spirit.name} leans toward the board.`);
-    }
+    room.history.push(`${room.spirit.name} is bound to this room now.`);
 
     trimHistory(room);
     broadcastRoom(room);
