@@ -1377,15 +1377,14 @@ function setWhisperLine(text) {
 
 function updateSpiritUi(spirit) {
   currentSpiritState = spirit || currentSpiritState;
-  const isEnabled = Boolean(currentSpiritState.enabled);
   const isActive = Boolean(currentSpiritState.active);
   const lastAnswer = currentSpiritState.lastAnswer || "No reply yet.";
 
   toggleSpiritButton.textContent = "Always On";
   toggleSpiritButton.disabled = true;
   spiritStatusElement.textContent = isActive
-    ? `${currentSpiritState.name} is reading the room and spelling an answer.`
-    : `${currentSpiritState.name} listens in every room and answers every question.`;
+    ? `${currentSpiritState.name} is answering now.`
+    : `${currentSpiritState.name} listens and answers.`;
   if (hauntingLevelElement) {
     hauntingLevelElement.textContent = `Haunting level: ${currentSpiritState.hauntingLevel || "Veiled"}.`;
   }
@@ -1685,9 +1684,11 @@ toggleSoundButton.addEventListener("click", () => {
   toggleSound();
 });
 
-installAppButton.addEventListener("click", () => {
-  handleInstallClick();
-});
+if (installAppButton) {
+  installAppButton.addEventListener("click", () => {
+    handleInstallClick();
+  });
+}
 
 enterSiteButton.addEventListener("click", () => {
   dismissWelcomeScreen();
