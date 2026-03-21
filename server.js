@@ -126,6 +126,7 @@ const BOARD_TARGETS = {
   9: { x: 76, y: 58 },
   0: { x: 83, y: 59 }
 };
+const SPIRIT_REST_CURSOR = { x: 50, y: 73 };
 
 const RESPONSE_LIBRARY = {
   certainty: ["YES", "NO", "NOT YET", "LATER"],
@@ -269,7 +270,7 @@ function createRoomState(roomId) {
   return {
     roomId,
     players: new Map(),
-    cursor: { x: 50, y: 72 },
+    cursor: { x: SPIRIT_REST_CURSOR.x, y: SPIRIT_REST_CURSOR.y },
     question: "Ask, and The Veil will answer.",
     history: [],
     spirit: {
@@ -1122,17 +1123,13 @@ function beginSpiritSequence(room, askedBy, question) {
       whisper: response.whisper,
       stepMs: response.stepMs,
       settleMs: response.settleMs,
-      omenLevel: response.omenLevel
+      omenLevel: response.omenLevel,
+      restingCursor: SPIRIT_REST_CURSOR
     });
   }, 900);
 
   addRoomTimer(room, () => {
-    const finalToken = response.sequence[response.sequence.length - 1];
-
-    if (finalToken && BOARD_TARGETS[finalToken]) {
-      room.cursor = BOARD_TARGETS[finalToken];
-    }
-
+    room.cursor = SPIRIT_REST_CURSOR;
     room.spirit.active = false;
     room.spirit.lastAnswer = response.answer;
     room.history.push(`${room.spirit.name} answered: ${response.answer}`);

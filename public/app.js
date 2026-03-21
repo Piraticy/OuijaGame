@@ -183,6 +183,7 @@ const SOUND_PROFILES = [
     ]
   }
 ];
+const RESTING_CURSOR = { x: 50, y: 73 };
 
 let currentRoomId = "";
 let desiredRoomId = "";
@@ -1361,9 +1362,14 @@ function renderHistory(entries) {
 }
 
 function updatePlanchette(cursor) {
-  latestCursor = cursor;
-  planchetteElement.style.left = `${cursor.x}%`;
-  planchetteElement.style.top = `${cursor.y}%`;
+  const safeCursor = {
+    x: Math.max(15, Math.min(85, Number(cursor?.x ?? RESTING_CURSOR.x))),
+    y: Math.max(14, Math.min(88, Number(cursor?.y ?? RESTING_CURSOR.y)))
+  };
+
+  latestCursor = safeCursor;
+  planchetteElement.style.left = `${safeCursor.x}%`;
+  planchetteElement.style.top = `${safeCursor.y}%`;
 }
 
 function setHauntingVisuals(active) {
@@ -1574,7 +1580,8 @@ async function animateSpiritSequence({
   whisper,
   stepMs = 520,
   settleMs = 900,
-  omenLevel = 1
+  omenLevel = 1,
+  restingCursor = RESTING_CURSOR
 }) {
   const runId = ++spiritAnimationRun;
   isSpiritMoving = true;
@@ -1608,6 +1615,13 @@ async function animateSpiritSequence({
 
   questionDisplay.textContent = answer;
   await wait(settleMs);
+
+  if (runId !== spiritAnimationRun) {
+    return;
+  }
+
+  updatePlanchette(restingCursor || RESTING_CURSOR);
+  await wait(240);
 
   if (runId !== spiritAnimationRun) {
     return;
