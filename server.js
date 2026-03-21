@@ -11,6 +11,7 @@ const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "0.0.0.0";
 
 const rooms = new Map();
+const hauntRegistry = new Map();
 const SPIRIT_NAME = "The Veil";
 const MAX_HISTORY = 20;
 
@@ -190,7 +191,8 @@ const QUESTION_STOP_WORDS = new Set([
 ]);
 
 function createRoomState(roomId) {
-  const mood = chooseRandom(Object.keys(SPIRIT_MOODS));
+  const haunting = getHaunting(roomId);
+  haunting.visits += 1;
 
   return {
     roomId,
@@ -203,7 +205,7 @@ function createRoomState(roomId) {
       active: false,
       name: SPIRIT_NAME,
       lastAnswer: "",
-      mood,
+      mood: haunting.mood,
       memory: []
     },
     timers: new Set()
@@ -309,6 +311,25 @@ function chooseWeighted(entries) {
   return entries[entries.length - 1][0];
 }
 
+function createHaunting(roomId) {
+  return {
+    roomId,
+    visits: 0,
+    mood: chooseRandom(Object.keys(SPIRIT_MOODS)),
+    seenNames: new Map(),
+    lastQuestioners: [],
+    lastSeenAt: 0
+  };
+}
+
+function getHaunting(roomId) {
+  if (!hauntRegistry.has(roomId)) {
+    hauntRegistry.set(roomId, createHaunting(roomId));
+  }
+
+  return hauntRegistry.get(roomId);
+}
+
 function normalizeQuestionKey(question) {
   return String(question || "")
     .toLowerCase()
@@ -355,6 +376,27 @@ function rememberQuestion(room, question) {
     roomWord: detectRoomWord(question)
   });
   room.spirit.memory = room.spirit.memory.slice(-3);
+}
+
+function rememberPlayer(roomId, name) {
+  const haunting = getHaunting(roomId);
+  const safeName = sanitizeName(name);
+  const seenCount = haunting.seenNames.get(safeName) || 0;
+
+  haunting.seenNames.set(safeName, seenCount + 1);
+  haunting.lastSeenAt = Date.now();
+
+  return seenCount;
+}
+
+function rememberQuestioner(roomId, name) {
+  const haunting = getHaunting(roomId);
+  const safeName = sanitizeName(name);
+
+  haunting.lastQuestioners = haunting.lastQuestioners
+    .filter((entry) => entry !== safeName)
+    .concat(safeName)
+    .slice(-3);
 }
 
 function getMoodPack(room) {
@@ -432,6 +474,9 @@ function extractQuestionProfile(question) {
       question.toLowerCase()
     ),
     asksAge: /\b(how old are you|your age|what age are you)\b/.test(question.toLowerCase()),
+    asksRememberMe: /\b(do you remember me|remember me|have we met|seen me before|do you know me)\b/.test(
+      question.toLowerCase()
+    ),
     asksIntent: /\b(what do you want|why are you here|what do you need|why did you come)\b/.test(
       question.toLowerCase()
     ),
@@ -602,10 +647,52 @@ function createTemperResponse(room) {
   ]);
 }
 
-function createMemoryResponse(room, profile, roomWord, questionKey) {
+function createRememberMeResponse(room, askedBy) {
+  const haunting = getHaunting(room.roomId);
+  const safeName = sanitizeName(askedBy);
+  const seenCount = haunting.seenNames.get(safeName) || 0;
+
+  if (seenCount > 1) {
+    return chooseWeighted([
+      [buildPhrase("YES", safeName), 7],
+      [buildPhrase("I KNOW", safeName), 6],
+      [buildPhrase(safeName, "CAME BACK"), 5],
+      ["I REMEMBER", 4]
+    ]);
+  }
+
+  return chooseWeighted([
+    ["NOT YET", 5],
+    ["YOU ARE NEW", 4],
+    ["FIRST TIME", 3]
+  ]);
+}
+
+function createReturningRoomResponse(room, askedBy) {
+  const haunting = getHaunting(room.roomId);
+  const safeName = sanitizeName(askedBy);
+
+  if (haunting.visits < 2) {
+    return null;
+  }
+
+  return chooseWeighted([
+    [buildPhrase("YOU CAME BACK", safeName), 6],
+    ["THIS ROOM REMEMBERS", 5],
+    ["I WAITED HERE", 4],
+    [buildPhrase("AGAIN", safeName), 3]
+  ]);
+}
+
+function createMemoryResponse(room, askedBy, profile, roomWord, questionKey) {
   const memory = room.spirit.memory || [];
+  const haunting = getHaunting(room.roomId);
   const repeated = memory.some((entry) => entry.key === questionKey);
   const recentWord = roomWord || memory[memory.length - 1]?.roomWord || "";
+
+  if (profile.asksRememberMe) {
+    return createRememberMeResponse(room, askedBy);
+  }
 
   if (repeated) {
     return chooseWeighted([
@@ -613,6 +700,10 @@ function createMemoryResponse(room, profile, roomWord, questionKey) {
       [profile.asksDirectPresence ? "STILL YES" : "I HEARD YOU", 4],
       ["DO NOT ASK TWICE", 3]
     ]);
+  }
+
+  if (haunting.visits > 1 && (profile.asksDirectPresence || profile.asksName)) {
+    return createReturningRoomResponse(room, askedBy);
   }
 
   if ((profile.asksDirectPresence || profile.asksLocation) && recentWord) {
@@ -630,12 +721,12 @@ function createMemoryResponse(room, profile, roomWord, questionKey) {
   return null;
 }
 
-function createSpiritResponse(room, question) {
+function createSpiritResponse(room, askedBy, question) {
   const value = question.toLowerCase();
   const profile = extractQuestionProfile(question);
   const roomWord = detectRoomWord(question) || "";
   const questionKey = normalizeQuestionKey(question);
-  const memoryAnswer = createMemoryResponse(room, profile, roomWord, questionKey);
+  const memoryAnswer = createMemoryResponse(room, askedBy, profile, roomWord, questionKey);
   let answer = chooseRandom(RESPONSE_LIBRARY.default);
 
   if (memoryAnswer) {
@@ -747,8 +838,9 @@ function createSpiritResponse(room, question) {
 
 function beginSpiritSequence(room, askedBy, question) {
   clearRoomTimers(room);
-  const response = createSpiritResponse(room, question);
+  const response = createSpiritResponse(room, askedBy, question);
   rememberQuestion(room, question);
+  rememberQuestioner(room.roomId, askedBy);
   room.spirit.active = true;
   room.spirit.lastAnswer = "";
   room.history.push(`${room.spirit.name} stirs after ${askedBy}'s question.`);
@@ -812,11 +904,20 @@ io.on("connection", (socket) => {
       name: sanitizeName(name),
       connectedAt: Date.now()
     };
+    const priorVisits = rememberPlayer(safeRoomId, player.name);
+    const haunting = getHaunting(safeRoomId);
 
     socket.data.roomId = safeRoomId;
     socket.join(safeRoomId);
     room.players.set(socket.id, player);
     room.history.push(`${player.name} entered the room.`);
+
+    if (priorVisits > 0) {
+      room.history.push(`${room.spirit.name} remembers ${player.name}.`);
+    } else if (haunting.visits > 1) {
+      room.history.push("The room recognizes a returning code.");
+    }
+
     trimHistory(room);
 
     socket.emit("room:joined", getPublicState(room));
