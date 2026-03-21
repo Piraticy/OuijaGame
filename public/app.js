@@ -110,6 +110,7 @@ const WELCOME_BOARD_OMENS = [
   { x: 58, y: 62 },
   { x: 42, y: 60 }
 ];
+const HAUNT_REVEAL_SEQUENCE = ["left", "right", "left", "right"];
 const SOUND_PROFILES = [
   {
     droneFrequency: 48,
@@ -212,7 +213,8 @@ let welcomeClosing = false;
 let welcomeTitleResetTimer = null;
 let welcomeTypingRun = 0;
 let hauntingRevealTimer = null;
-let hauntingRevealHoldTimer = null;
+let hauntingTapTimer = null;
+let hauntingTapProgress = 0;
 
 function setStatus(text, isError = false) {
   connectionStatus.textContent = text;
@@ -304,10 +306,84 @@ function revealHauntingLevel() {
   }, 5200);
 }
 
+function resetHauntingTapSequence() {
+  hauntingTapProgress = 0;
+
+  if (hauntingTapTimer) {
+    window.clearTimeout(hauntingTapTimer);
+    hauntingTapTimer = null;
+  }
+}
+
+function scheduleHauntingTapReset() {
+  if (hauntingTapTimer) {
+    window.clearTimeout(hauntingTapTimer);
+  }
+
+  hauntingTapTimer = window.setTimeout(() => {
+    resetHauntingTapSequence();
+  }, 1450);
+}
+
+function getSpiritTapZone(event) {
+  if (!spiritCardElement) {
+    return "center";
+  }
+
+  const rect = spiritCardElement.getBoundingClientRect();
+  const x = (event.clientX - rect.left) / rect.width;
+
+  if (x <= 0.36) {
+    return "left";
+  }
+
+  if (x >= 0.64) {
+    return "right";
+  }
+
+  return "center";
+}
+
+function registerHauntingTap(event) {
+  if (!spiritCardElement) {
+    return;
+  }
+
+  const zone = getSpiritTapZone(event);
+  const expectedZone = HAUNT_REVEAL_SEQUENCE[hauntingTapProgress];
+
+  if (zone === expectedZone) {
+    hauntingTapProgress += 1;
+    scheduleHauntingTapReset();
+
+    if (hauntingTapProgress >= HAUNT_REVEAL_SEQUENCE.length) {
+      resetHauntingTapSequence();
+      spiritCardElement.classList.remove("is-sequence-hit");
+      void spiritCardElement.offsetWidth;
+      spiritCardElement.classList.add("is-sequence-hit");
+      revealHauntingLevel();
+      window.setTimeout(() => {
+        spiritCardElement.classList.remove("is-sequence-hit");
+      }, 520);
+    }
+
+    return;
+  }
+
+  hauntingTapProgress = zone === HAUNT_REVEAL_SEQUENCE[0] ? 1 : 0;
+
+  if (hauntingTapProgress > 0) {
+    scheduleHauntingTapReset();
+  } else {
+    resetHauntingTapSequence();
+  }
+}
+
 function applyHauntingPresence() {
   const mix = getHauntingMix(currentSpiritState.hauntingLevel);
 
   boardElement.dataset.hauntLevel = mix.boardLevel;
+  document.body.dataset.hauntLevel = mix.boardLevel;
 
   if (masterGain && audioContext && soundEnabled) {
     masterGain.gain.setTargetAtTime(mix.musicGain, audioContext.currentTime, 0.45);
@@ -595,6 +671,31 @@ function seedWelcomeScreen() {
   const totalVisits = getLocalVeilVisits();
 
   if ((roomCount > 0 || totalVisits > 1) && savedName && savedName !== "Guest") {
+    if (Math.random() < 0.22) {
+      queueWelcomeTimer(() => {
+        if (welcomeClosing || welcomeScreenElement.classList.contains("is-hidden")) {
+          return;
+        }
+
+        const previousTitle = welcomeTitleElement.textContent;
+        welcomeScreenElement.classList.remove("is-jump");
+        void welcomeScreenElement.offsetWidth;
+        welcomeScreenElement.classList.add("is-jump");
+        welcomeTitleElement.textContent = savedName.toUpperCase();
+        flickerWelcomeTitle();
+        flashWelcomeStrobe(Math.random() > 0.5 ? "red" : "white");
+        flashWelcomeOmen(Math.random() > 0.6);
+        typeWelcomeWhisper(`I KNOW ${savedName}`);
+
+        queueWelcomeTimer(() => {
+          if (!welcomeClosing && !welcomeScreenElement.classList.contains("is-hidden")) {
+            welcomeTitleElement.textContent = previousTitle;
+            welcomeScreenElement.classList.remove("is-jump");
+          }
+        }, 540);
+      }, randomBetween(950, 1800));
+    }
+
     queueWelcomeTimer(() => {
       if (welcomeClosing || welcomeScreenElement.classList.contains("is-hidden")) {
         return;
@@ -1529,28 +1630,7 @@ welcomeScreenElement.addEventListener("pointermove", () => {
 }, { once: true });
 
 if (spiritCardElement) {
-  const beginRevealHold = () => {
-    if (hauntingRevealHoldTimer) {
-      window.clearTimeout(hauntingRevealHoldTimer);
-    }
-
-    hauntingRevealHoldTimer = window.setTimeout(() => {
-      revealHauntingLevel();
-      hauntingRevealHoldTimer = null;
-    }, 900);
-  };
-
-  const cancelRevealHold = () => {
-    if (hauntingRevealHoldTimer) {
-      window.clearTimeout(hauntingRevealHoldTimer);
-      hauntingRevealHoldTimer = null;
-    }
-  };
-
-  spiritCardElement.addEventListener("pointerdown", beginRevealHold);
-  spiritCardElement.addEventListener("pointerup", cancelRevealHold);
-  spiritCardElement.addEventListener("pointerleave", cancelRevealHold);
-  spiritCardElement.addEventListener("pointercancel", cancelRevealHold);
+  spiritCardElement.addEventListener("pointerup", registerHauntingTap);
 }
 
 document.addEventListener("touchstart", attemptAutoStartAudio, { once: true, passive: true });

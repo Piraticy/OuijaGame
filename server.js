@@ -132,6 +132,7 @@ const RESPONSE_LIBRARY = {
   presence: ["I AM HERE", "ALWAYS", "IN SHADOW"],
   identity: ["THE VEIL", "NO NAME", "ONLY ECHOES"],
   intent: ["TO BE HEARD", "TO REMEMBER", "TO WATCH"],
+  hunger: ["ALWAYS", "I HUNGER", "FOR LIGHT", "FOR NAMES"],
   feeling: ["COLD MEMORY", "QUIET DREAD", "HEAVY AIR"],
   warning: ["STAY IN LIGHT", "KEEP QUIET", "DO NOT RUSH"],
   time: ["AT MIDNIGHT", "WHEN RAIN FALLS", "AFTER THE BELL"],
@@ -587,6 +588,7 @@ function buildPhrase(...parts) {
 }
 
 function extractQuestionProfile(question) {
+  const lowerQuestion = String(question || "").toLowerCase();
   const words = String(question || "")
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, " ")
@@ -605,35 +607,43 @@ function extractQuestionProfile(question) {
     primaryWord,
     secondaryWord,
     asksDirectPresence: /\b(is anyone there|are you there|are you here|is anybody there|can you hear me|do you hear me)\b/.test(
-      question.toLowerCase()
+      lowerQuestion
     ),
     asksName: /\b(what is your name|what's your name|who are you|tell me your name)\b/.test(
-      question.toLowerCase()
+      lowerQuestion
     ),
-    asksAge: /\b(how old are you|your age|what age are you)\b/.test(question.toLowerCase()),
+    asksAge: /\b(how old are you|your age|what age are you)\b/.test(lowerQuestion),
     asksRememberMe: /\b(do you remember me|remember me|have we met|seen me before|do you know me)\b/.test(
-      question.toLowerCase()
+      lowerQuestion
     ),
     asksIntent: /\b(what do you want|why are you here|what do you need|why did you come)\b/.test(
-      question.toLowerCase()
+      lowerQuestion
     ),
-    asksLocation: /\b(where are you|where do you hide|where should i look)\b/.test(question.toLowerCase()),
-    asksTemper: /\b(are you evil|are you bad|are you friendly|are you good)\b/.test(question.toLowerCase()),
+    asksLocation: /\b(where are you|where do you hide|where should i look)\b/.test(lowerQuestion),
+    asksTemper: /\b(are you evil|are you bad|are you friendly|are you good)\b/.test(lowerQuestion),
+    asksHunger: /\b(are you hungry|are you starving|do you hunger|what are you hungry for|who are you hungry for|do you want to eat|do you want to feed)\b/.test(
+      lowerQuestion
+    ),
+    mentionsHunger: /\b(hungry|starving|hunger|feed|eat|devour|consume)\b/.test(lowerQuestion),
     mentionsDoorway: /\bdoor|window|closet|hall|hallway|stairs|attic|basement|room|bed|mirror\b/.test(
-      question.toLowerCase()
+      lowerQuestion
     ),
     mentionsPerson: /\bmother|father|mom|dad|sister|brother|friend|girl|boy|man|woman|child|name\b/.test(
-      question.toLowerCase()
+      lowerQuestion
     ),
-    asksSafety: /\bhelp|safe|scared|afraid|danger|leave|run\b/.test(question.toLowerCase()),
-    asksTime: /\bwhen|time|night|midnight|hour|clock\b/.test(question.toLowerCase()),
-    asksIdentity: /\bwho|name|what are you\b/.test(question.toLowerCase()),
-    asksPresence: /\bare you|is someone|here|with me|in my\b/.test(question.toLowerCase())
+    asksSafety: /\bhelp|safe|scared|afraid|danger|leave|run\b/.test(lowerQuestion),
+    asksTime: /\bwhen|time|night|midnight|hour|clock\b/.test(lowerQuestion),
+    asksIdentity: /\bwho|name|what are you\b/.test(lowerQuestion),
+    asksPresence: /\bare you|is someone|here|with me|in my\b/.test(lowerQuestion)
   };
 }
 
 function createSubjectResponse(profile) {
   const subject = profile.primaryWord;
+
+  if (profile.asksHunger || profile.mentionsHunger) {
+    return chooseRandom(["HUNGER STAYS", "FOR LIGHT", "IT FEEDS"]);
+  }
 
   if (!subject) {
     return null;
@@ -782,6 +792,53 @@ function createTemperResponse(room) {
     ["DO NOT ASK", 3],
     [chooseMoodLine(room, "default"), 2]
   ]);
+}
+
+function createHungerResponse(room, askedBy, roomWord) {
+  const haunting = getHaunting(room.roomId);
+  const safeName = sanitizeName(askedBy);
+  const seenCount = haunting.seenNames.get(safeName) || 0;
+  const rememberedWord = getRememberedRoomWord(room, roomWord, askedBy);
+  const weightedAnswers = [
+    ["ALWAYS", 10],
+    ["YES", 8],
+    ["I HUNGER", 7],
+    ["FOR LIGHT", 6],
+    ["FOR NAMES", 6],
+    ["HUNGER STAYS", 4],
+    [chooseMoodLine(room, "intent"), 3]
+  ];
+
+  if (rememberedWord) {
+    weightedAnswers.push(
+      [buildPhrase("THE", rememberedWord, "FEEDS ME"), 6],
+      [createRoomWordResponse(rememberedWord, "intent"), 4]
+    );
+  }
+
+  if (seenCount > 1) {
+    weightedAnswers.push(
+      [buildPhrase("I KNOW", safeName), 3],
+      ["YOUR NAME LINGERS", 3]
+    );
+  }
+
+  return chooseWeighted(weightedAnswers);
+}
+
+function createSpiritWhisper(room, askedBy, profile, roomWord) {
+  if (profile.asksHunger || profile.mentionsHunger) {
+    const rememberedWord = getRememberedRoomWord(room, roomWord, askedBy);
+
+    return chooseWeighted([
+      ["HUNGER DOES NOT SLEEP", 6],
+      ["NAMES FEED IT", 5],
+      [rememberedWord ? buildPhrase("IT WAITS IN THE", rememberedWord) : chooseMoodLine(room, "default"), 4],
+      [chooseMoodLine(room, "default"), 3]
+    ]);
+  }
+
+  return createRoomWordResponse(roomWord, "warning") || createSubjectResponse(profile) || chooseMoodLine(room, "default");
 }
 
 function createRememberMeResponse(room, askedBy) {
@@ -951,6 +1008,8 @@ function createSpiritResponse(room, askedBy, question) {
       ["100", 2],
       ["OLDER THAN YOU", 3]
     ]);
+  } else if (profile.asksHunger) {
+    answer = createHungerResponse(room, askedBy, roomWord);
   } else if (profile.asksIntent) {
     answer = createRememberedWordResponse(room, askedBy, "intent", roomWord) || createIntentResponse(room, profile, roomWord);
   } else if (profile.asksLocation) {
@@ -1037,7 +1096,7 @@ function createSpiritResponse(room, askedBy, question) {
   return {
     answer,
     sequence: tokens,
-    whisper: createRoomWordResponse(roomWord, "warning") || createSubjectResponse(profile) || chooseMoodLine(room, "default"),
+    whisper: createSpiritWhisper(room, askedBy, profile, roomWord),
     stepMs: 430 + Math.floor(Math.random() * 180),
     settleMs: 800 + Math.floor(Math.random() * 500),
     omenLevel: roomWord ? 3 : profile.primaryWord ? 2 : 1

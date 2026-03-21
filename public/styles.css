@@ -521,6 +521,10 @@ button:hover {
   gap: 16px;
 }
 
+.spirit-card.is-sequence-hit {
+  animation: spiritRevealFlash 420ms ease;
+}
+
 .install-card {
   margin-top: auto;
 }
@@ -565,6 +569,11 @@ button:hover {
 .invite-row input {
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+#room-code-display,
+#invite-link {
+  transition: text-shadow 220ms ease, transform 220ms ease, filter 220ms ease, letter-spacing 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
 }
 
 .whisper-line {
@@ -759,8 +768,132 @@ button:hover {
   --haunt-glow-alpha: 0.3;
 }
 
+body[data-haunt-level="Watching"] #room-code-display,
+body[data-haunt-level="Watching"] #invite-link {
+  text-shadow:
+    0 0 14px rgba(201, 227, 255, 0.18),
+    1px 0 0 rgba(255, 114, 114, 0.1);
+}
+
+body[data-haunt-level="Watching"] #room-code-display {
+  animation: hauntGlyphShift 7.2s steps(2) infinite;
+}
+
+body[data-haunt-level="Awake"] #room-code-display,
+body[data-haunt-level="Awake"] #invite-link {
+  text-shadow:
+    0 0 20px rgba(201, 227, 255, 0.22),
+    1px 0 0 rgba(255, 114, 114, 0.14),
+    -1px 0 0 rgba(117, 184, 255, 0.12);
+}
+
+body[data-haunt-level="Awake"] #room-code-display {
+  letter-spacing: 0.04em;
+  animation: hauntGlyphShift 4.2s steps(2) infinite, hauntGlowPulse 5.4s ease-in-out infinite;
+}
+
+body[data-haunt-level="Awake"] #invite-link {
+  border-color: rgba(190, 220, 255, 0.18);
+  animation: hauntFieldShift 5.2s steps(2) infinite;
+}
+
+body[data-haunt-level="Attached"] #room-code-display,
+body[data-haunt-level="Attached"] #invite-link {
+  text-shadow:
+    0 0 24px rgba(201, 227, 255, 0.28),
+    2px 0 0 rgba(255, 114, 114, 0.18),
+    -2px 0 0 rgba(117, 184, 255, 0.16);
+  filter: saturate(1.08);
+}
+
+body[data-haunt-level="Attached"] #room-code-display {
+  letter-spacing: 0.06em;
+  animation: hauntGlyphShift 2.4s steps(2) infinite, hauntGlowPulse 3.4s ease-in-out infinite;
+}
+
+body[data-haunt-level="Attached"] #invite-link {
+  border-color: rgba(190, 220, 255, 0.26);
+  box-shadow: 0 0 0 1px rgba(190, 220, 255, 0.06), 0 0 28px rgba(190, 220, 255, 0.08);
+  animation: hauntFieldShift 2.8s steps(2) infinite;
+}
+
 .board.is-welcome-moving {
   animation: boardPulse 0.55s ease;
+}
+
+@keyframes spiritRevealFlash {
+  0%,
+  100% {
+    filter: none;
+    transform: translateY(0);
+  }
+
+  35% {
+    filter: drop-shadow(0 0 18px rgba(201, 227, 255, 0.26));
+    transform: translateY(-2px);
+  }
+
+  62% {
+    filter: drop-shadow(0 0 10px rgba(255, 124, 124, 0.18));
+    transform: translateY(1px);
+  }
+}
+
+@keyframes hauntGlyphShift {
+  0%,
+  100% {
+    transform: translateX(0) skewX(0deg);
+  }
+
+  18% {
+    transform: translateX(1px) skewX(1deg);
+  }
+
+  19% {
+    transform: translateX(-1px) skewX(-1deg);
+  }
+
+  52% {
+    transform: translateX(2px) skewX(-1.2deg);
+  }
+
+  53% {
+    transform: translateX(-2px) skewX(1.2deg);
+  }
+}
+
+@keyframes hauntFieldShift {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  24% {
+    transform: translateX(1px);
+  }
+
+  25% {
+    transform: translateX(-1px);
+  }
+
+  62% {
+    transform: translateX(2px);
+  }
+
+  63% {
+    transform: translateX(-2px);
+  }
+}
+
+@keyframes hauntGlowPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.88;
+  }
 }
 
 .welcome-planchette-shadow {
