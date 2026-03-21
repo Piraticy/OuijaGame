@@ -522,6 +522,17 @@ function dismissWelcomeScreen() {
   welcomeScreenElement.classList.add("is-jump");
   welcomeClosing = true;
 
+  if (audioContext && welcomeAudioState.started && welcomeAudioState.gain) {
+    const now = audioContext.currentTime;
+    welcomeAudioState.gain.gain.cancelScheduledValues(now);
+    welcomeAudioState.gain.gain.setValueAtTime(Math.max(welcomeAudioState.gain.gain.value, 0.0001), now);
+    welcomeAudioState.gain.gain.linearRampToValueAtTime(0.085, now + 0.8);
+  }
+
+  if (masterGain && audioContext) {
+    masterGain.gain.setTargetAtTime(0.055, audioContext.currentTime, 0.45);
+  }
+
   queueWelcomeTimer(() => {
     boardElement.classList.remove("is-welcome-moving");
     welcomeScreenElement.classList.add("is-hidden");

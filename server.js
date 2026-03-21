@@ -1,6 +1,8 @@
 const path = require("path");
+const fs = require("fs");
 const http = require("http");
 const express = require("express");
+const { DatabaseSync } = require("node:sqlite");
 const { Server } = require("socket.io");
 
 const app = express();
@@ -9,11 +11,78 @@ const io = new Server(server);
 
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "0.0.0.0";
+const DATA_DIR = path.join(__dirname, "data");
+const DB_PATH = path.join(DATA_DIR, "veil-memory.sqlite");
 
 const rooms = new Map();
 const hauntRegistry = new Map();
 const SPIRIT_NAME = "The Veil";
 const MAX_HISTORY = 20;
+
+fs.mkdirSync(DATA_DIR, { recursive: true });
+
+const db = new DatabaseSync(DB_PATH);
+db.exec(`
+  PRAGMA journal_mode = WAL;
+  CREATE TABLE IF NOT EXISTS haunt_rooms (
+    room_id TEXT PRIMARY KEY,
+    visits INTEGER NOT NULL DEFAULT 0,
+    mood TEXT NOT NULL,
+    last_seen_at INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE TABLE IF NOT EXISTS haunt_names (
+    room_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    seen_count INTEGER NOT NULL DEFAULT 0,
+    last_seen_at INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (room_id, name)
+  );
+  CREATE TABLE IF NOT EXISTS haunt_room_words (
+    room_id TEXT NOT NULL,
+    word TEXT NOT NULL,
+    seen_count INTEGER NOT NULL DEFAULT 0,
+    last_name TEXT,
+    updated_at INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (room_id, word)
+  );
+`);
+
+const selectRoomStmt = db.prepare(
+  "SELECT room_id, visits, mood, last_seen_at FROM haunt_rooms WHERE room_id = ?"
+);
+const insertRoomStmt = db.prepare(
+  "INSERT INTO haunt_rooms (room_id, visits, mood, last_seen_at) VALUES (?, ?, ?, ?)"
+);
+const updateRoomVisitStmt = db.prepare(
+  "UPDATE haunt_rooms SET visits = ?, last_seen_at = ? WHERE room_id = ?"
+);
+const selectNamesStmt = db.prepare(
+  "SELECT name, seen_count FROM haunt_names WHERE room_id = ?"
+);
+const selectNameStmt = db.prepare(
+  "SELECT seen_count FROM haunt_names WHERE room_id = ? AND name = ?"
+);
+const upsertNameStmt = db.prepare(`
+  INSERT INTO haunt_names (room_id, name, seen_count, last_seen_at)
+  VALUES (?, ?, ?, ?)
+  ON CONFLICT(room_id, name) DO UPDATE SET
+    seen_count = excluded.seen_count,
+    last_seen_at = excluded.last_seen_at
+`);
+const selectWordsStmt = db.prepare(
+  "SELECT word, seen_count, last_name FROM haunt_room_words WHERE room_id = ? ORDER BY seen_count DESC, updated_at DESC LIMIT 6"
+);
+const selectWordStmt = db.prepare(
+  "SELECT seen_count, last_name FROM haunt_room_words WHERE room_id = ? AND word = ?"
+);
+const upsertWordStmt = db.prepare(`
+  INSERT INTO haunt_room_words (room_id, word, seen_count, last_name, updated_at)
+  VALUES (?, ?, ?, ?, ?)
+  ON CONFLICT(room_id, word) DO UPDATE SET
+    seen_count = excluded.seen_count,
+    last_name = excluded.last_name,
+    updated_at = excluded.updated_at
+`);
 
 const BOARD_TARGETS = {
   YES: { x: 17, y: 11 },
@@ -193,6 +262,8 @@ const QUESTION_STOP_WORDS = new Set([
 function createRoomState(roomId) {
   const haunting = getHaunting(roomId);
   haunting.visits += 1;
+  haunting.lastSeenAt = Date.now();
+  updateRoomVisitStmt.run(haunting.visits, haunting.lastSeenAt, roomId);
 
   return {
     roomId,
@@ -312,13 +383,31 @@ function chooseWeighted(entries) {
 }
 
 function createHaunting(roomId) {
+  const row = selectRoomStmt.get(roomId);
+  const mood = row?.mood || chooseRandom(Object.keys(SPIRIT_MOODS));
+
+  if (!row) {
+    insertRoomStmt.run(roomId, 0, mood, 0);
+  }
+
+  const seenNames = new Map(
+    selectNamesStmt.all(roomId).map((entry) => [entry.name, entry.seen_count])
+  );
+  const rememberedWords = new Map(
+    selectWordsStmt.all(roomId).map((entry) => [entry.word, {
+      count: entry.seen_count,
+      lastName: entry.last_name || ""
+    }])
+  );
+
   return {
     roomId,
-    visits: 0,
-    mood: chooseRandom(Object.keys(SPIRIT_MOODS)),
-    seenNames: new Map(),
+    visits: row?.visits || 0,
+    mood,
+    seenNames,
     lastQuestioners: [],
-    lastSeenAt: 0
+    lastSeenAt: row?.last_seen_at || 0,
+    rememberedWords
   };
 }
 
@@ -370,21 +459,28 @@ function detectRoomWord(question) {
 }
 
 function rememberQuestion(room, question) {
+  const roomWord = detectRoomWord(question);
+
   room.spirit.memory.push({
     raw: question,
     key: normalizeQuestionKey(question),
-    roomWord: detectRoomWord(question)
+    roomWord
   });
   room.spirit.memory = room.spirit.memory.slice(-3);
+
+  return roomWord;
 }
 
 function rememberPlayer(roomId, name) {
   const haunting = getHaunting(roomId);
   const safeName = sanitizeName(name);
-  const seenCount = haunting.seenNames.get(safeName) || 0;
+  const seenCount = selectNameStmt.get(roomId, safeName)?.seen_count || 0;
+  const nextCount = seenCount + 1;
+  const now = Date.now();
 
-  haunting.seenNames.set(safeName, seenCount + 1);
-  haunting.lastSeenAt = Date.now();
+  haunting.seenNames.set(safeName, nextCount);
+  haunting.lastSeenAt = now;
+  upsertNameStmt.run(roomId, safeName, nextCount, now);
 
   return seenCount;
 }
@@ -397,6 +493,24 @@ function rememberQuestioner(roomId, name) {
     .filter((entry) => entry !== safeName)
     .concat(safeName)
     .slice(-3);
+}
+
+function rememberRoomWord(roomId, word, name) {
+  if (!word) {
+    return;
+  }
+
+  const haunting = getHaunting(roomId);
+  const current = selectWordStmt.get(roomId, word);
+  const nextCount = (current?.seen_count || 0) + 1;
+  const safeName = sanitizeName(name);
+  const now = Date.now();
+
+  haunting.rememberedWords.set(word, {
+    count: nextCount,
+    lastName: safeName
+  });
+  upsertWordStmt.run(roomId, word, nextCount, safeName, now);
 }
 
 function getMoodPack(room) {
@@ -684,6 +798,46 @@ function createReturningRoomResponse(room, askedBy) {
   ]);
 }
 
+function createNamedPresenceResponse(room, askedBy) {
+  const haunting = getHaunting(room.roomId);
+  const safeName = sanitizeName(askedBy);
+  const seenCount = haunting.seenNames.get(safeName) || 0;
+
+  if (seenCount < 2) {
+    return null;
+  }
+
+  return chooseWeighted([
+    [buildPhrase("YES", safeName), 8],
+    [buildPhrase("I SEE", safeName), 6],
+    [buildPhrase(safeName, "AGAIN"), 5],
+    [buildPhrase("WELCOME BACK", safeName), 4]
+  ]);
+}
+
+function getRememberedRoomWord(room, fallback = "") {
+  const haunting = getHaunting(room.roomId);
+
+  if (fallback && haunting.rememberedWords.has(fallback)) {
+    return fallback;
+  }
+
+  const sorted = Array.from(haunting.rememberedWords.entries())
+    .sort((left, right) => right[1].count - left[1].count);
+
+  return sorted[0]?.[0] || fallback;
+}
+
+function createRememberedWordResponse(room, mode, fallback = "") {
+  const rememberedWord = getRememberedRoomWord(room, fallback);
+
+  if (!rememberedWord) {
+    return null;
+  }
+
+  return createRoomWordResponse(rememberedWord, mode);
+}
+
 function createMemoryResponse(room, askedBy, profile, roomWord, questionKey) {
   const memory = room.spirit.memory || [];
   const haunting = getHaunting(room.roomId);
@@ -706,8 +860,28 @@ function createMemoryResponse(room, askedBy, profile, roomWord, questionKey) {
     return createReturningRoomResponse(room, askedBy);
   }
 
+  if (profile.asksDirectPresence) {
+    const namedResponse = createNamedPresenceResponse(room, askedBy);
+
+    if (namedResponse) {
+      return namedResponse;
+    }
+  }
+
   if ((profile.asksDirectPresence || profile.asksLocation) && recentWord) {
     return createRoomWordResponse(recentWord, profile.asksDirectPresence ? "presence" : "location");
+  }
+
+  if (profile.asksLocation || profile.asksSafety || profile.asksIntent) {
+    const rememberedResponse = createRememberedWordResponse(
+      room,
+      profile.asksLocation ? "location" : profile.asksSafety ? "warning" : "intent",
+      roomWord
+    );
+
+    if (rememberedResponse) {
+      return rememberedResponse;
+    }
   }
 
   if (profile.asksName && memory.length && memory[memory.length - 1]?.key.includes("are you")) {
@@ -732,7 +906,7 @@ function createSpiritResponse(room, askedBy, question) {
   if (memoryAnswer) {
     answer = memoryAnswer;
   } else if (profile.asksDirectPresence) {
-    answer = createPresenceResponse(room, profile, roomWord);
+    answer = createNamedPresenceResponse(room, askedBy) || createPresenceResponse(room, profile, roomWord);
   } else if (profile.asksName) {
     answer = createIdentityResponse(room);
   } else if (profile.asksAge) {
@@ -744,9 +918,9 @@ function createSpiritResponse(room, askedBy, question) {
       ["OLDER THAN YOU", 3]
     ]);
   } else if (profile.asksIntent) {
-    answer = createIntentResponse(room, profile, roomWord);
+    answer = createRememberedWordResponse(room, "intent", roomWord) || createIntentResponse(room, profile, roomWord);
   } else if (profile.asksLocation) {
-    answer = createLocationResponse(room, profile, roomWord);
+    answer = createRememberedWordResponse(room, "location", roomWord) || createLocationResponse(room, profile, roomWord);
   } else if (profile.asksTemper) {
     answer = createTemperResponse(room);
   } else if (profile.asksIdentity) {
@@ -760,7 +934,7 @@ function createSpiritResponse(room, askedBy, question) {
         ])
       : chooseRandom(RESPONSE_LIBRARY.time);
   } else if (profile.asksSafety) {
-    answer = roomWord
+    answer = createRememberedWordResponse(room, "warning", roomWord) || (roomWord
       ? chooseWeighted([
           [createRoomWordResponse(roomWord, "warning"), 8],
           [chooseRandom(RESPONSE_LIBRARY.warning), 4],
@@ -772,7 +946,7 @@ function createSpiritResponse(room, askedBy, question) {
             buildPhrase("LEAVE", profile.primaryWord),
             buildPhrase("DO NOT WAIT")
           ])
-        : chooseRandom(RESPONSE_LIBRARY.warning);
+        : chooseRandom(RESPONSE_LIBRARY.warning));
   } else if (/\b(are|is|do|did|will|can|should)\b/.test(value)) {
     answer = chooseRandom(RESPONSE_LIBRARY.certainty);
   } else if (/\bwhy\b/.test(value)) {
@@ -839,8 +1013,9 @@ function createSpiritResponse(room, askedBy, question) {
 function beginSpiritSequence(room, askedBy, question) {
   clearRoomTimers(room);
   const response = createSpiritResponse(room, askedBy, question);
-  rememberQuestion(room, question);
+  const roomWord = rememberQuestion(room, question);
   rememberQuestioner(room.roomId, askedBy);
+  rememberRoomWord(room.roomId, roomWord, askedBy);
   room.spirit.active = true;
   room.spirit.lastAnswer = "";
   room.history.push(`${room.spirit.name} stirs after ${askedBy}'s question.`);
