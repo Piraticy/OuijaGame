@@ -522,6 +522,14 @@ button:hover {
   margin-top: auto;
 }
 
+.haunting-level {
+  margin: 10px 0 0;
+  color: rgba(244, 188, 91, 0.64);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
 .install-help {
   margin: 14px 0 0;
   padding: 12px 14px;

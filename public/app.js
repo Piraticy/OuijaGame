@@ -61,6 +61,7 @@ const inviteLinkInput = document.getElementById("invite-link");
 const copyInviteButton = document.getElementById("copy-invite");
 const toggleSpiritButton = document.getElementById("toggle-spirit");
 const spiritStatusElement = document.getElementById("spirit-status");
+const hauntingLevelElement = document.getElementById("haunting-level");
 const spiritAnswerElement = document.getElementById("spirit-answer");
 const toggleSoundButton = document.getElementById("toggle-sound");
 const whisperLineElement = document.getElementById("whisper-line");
@@ -184,7 +185,9 @@ let currentSpiritState = {
   enabled: true,
   active: false,
   name: "The Veil",
-  lastAnswer: ""
+  lastAnswer: "",
+  mood: "watchful",
+  hauntingLevel: "Veiled"
 };
 let spiritAnimationRun = 0;
 let soundEnabled = false;
@@ -570,13 +573,11 @@ function updateInstallUi() {
   }
 
   if (isStandaloneMode()) {
-    installStatusElement.textContent = "Installed. Open it from your home screen or desktop like an app.";
-    installAppButton.textContent = "Installed";
-    installAppButton.disabled = true;
-    setInstallHelp();
+    installCardElement.hidden = true;
     return;
   }
 
+  installCardElement.hidden = false;
   installAppButton.disabled = false;
 
   if (deferredInstallPrompt) {
@@ -1105,6 +1106,9 @@ function updateSpiritUi(spirit) {
   spiritStatusElement.textContent = isActive
     ? `${currentSpiritState.name} is reading the room and spelling an answer.`
     : `${currentSpiritState.name} listens in every room and answers every question.`;
+  if (hauntingLevelElement) {
+    hauntingLevelElement.textContent = `Haunting level: ${currentSpiritState.hauntingLevel || "Veiled"}.`;
+  }
   spiritAnswerElement.textContent = lastAnswer;
   setWhisperLine(
     isActive

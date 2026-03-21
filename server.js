@@ -291,6 +291,27 @@ function getRoom(roomId) {
   return rooms.get(roomId);
 }
 
+function getHauntingLevel(roomId) {
+  const haunting = getHaunting(roomId);
+  const namesScore = haunting.seenNames.size;
+  const wordsScore = haunting.rememberedWords.size;
+  const total = haunting.visits + namesScore + wordsScore;
+
+  if (total >= 10) {
+    return "Attached";
+  }
+
+  if (total >= 6) {
+    return "Awake";
+  }
+
+  if (total >= 3) {
+    return "Watching";
+  }
+
+  return "Veiled";
+}
+
 function getPublicState(room) {
   const players = Array.from(room.players.values());
 
@@ -313,7 +334,9 @@ function getPublicState(room) {
       enabled: room.spirit.enabled,
       active: room.spirit.active,
       name: room.spirit.name,
-      lastAnswer: room.spirit.lastAnswer
+      lastAnswer: room.spirit.lastAnswer,
+      mood: room.spirit.mood,
+      hauntingLevel: getHauntingLevel(room.roomId)
     }
   };
 }
@@ -803,7 +826,7 @@ function createNamedPresenceResponse(room, askedBy) {
   const safeName = sanitizeName(askedBy);
   const seenCount = haunting.seenNames.get(safeName) || 0;
 
-  if (seenCount < 2) {
+  if (seenCount < 1) {
     return null;
   }
 
@@ -815,21 +838,31 @@ function createNamedPresenceResponse(room, askedBy) {
   ]);
 }
 
-function getRememberedRoomWord(room, fallback = "") {
+function getRememberedRoomWord(room, fallback = "", askedBy = "") {
   const haunting = getHaunting(room.roomId);
+  const safeName = sanitizeName(askedBy);
 
   if (fallback && haunting.rememberedWords.has(fallback)) {
     return fallback;
   }
 
   const sorted = Array.from(haunting.rememberedWords.entries())
-    .sort((left, right) => right[1].count - left[1].count);
+    .sort((left, right) => {
+      const leftMatch = left[1].lastName === safeName ? 1 : 0;
+      const rightMatch = right[1].lastName === safeName ? 1 : 0;
+
+      if (rightMatch !== leftMatch) {
+        return rightMatch - leftMatch;
+      }
+
+      return right[1].count - left[1].count;
+    });
 
   return sorted[0]?.[0] || fallback;
 }
 
-function createRememberedWordResponse(room, mode, fallback = "") {
-  const rememberedWord = getRememberedRoomWord(room, fallback);
+function createRememberedWordResponse(room, askedBy, mode, fallback = "") {
+  const rememberedWord = getRememberedRoomWord(room, fallback, askedBy);
 
   if (!rememberedWord) {
     return null;
@@ -875,6 +908,7 @@ function createMemoryResponse(room, askedBy, profile, roomWord, questionKey) {
   if (profile.asksLocation || profile.asksSafety || profile.asksIntent) {
     const rememberedResponse = createRememberedWordResponse(
       room,
+      askedBy,
       profile.asksLocation ? "location" : profile.asksSafety ? "warning" : "intent",
       roomWord
     );
@@ -918,9 +952,9 @@ function createSpiritResponse(room, askedBy, question) {
       ["OLDER THAN YOU", 3]
     ]);
   } else if (profile.asksIntent) {
-    answer = createRememberedWordResponse(room, "intent", roomWord) || createIntentResponse(room, profile, roomWord);
+    answer = createRememberedWordResponse(room, askedBy, "intent", roomWord) || createIntentResponse(room, profile, roomWord);
   } else if (profile.asksLocation) {
-    answer = createRememberedWordResponse(room, "location", roomWord) || createLocationResponse(room, profile, roomWord);
+    answer = createRememberedWordResponse(room, askedBy, "location", roomWord) || createLocationResponse(room, profile, roomWord);
   } else if (profile.asksTemper) {
     answer = createTemperResponse(room);
   } else if (profile.asksIdentity) {
@@ -934,7 +968,7 @@ function createSpiritResponse(room, askedBy, question) {
         ])
       : chooseRandom(RESPONSE_LIBRARY.time);
   } else if (profile.asksSafety) {
-    answer = createRememberedWordResponse(room, "warning", roomWord) || (roomWord
+    answer = createRememberedWordResponse(room, askedBy, "warning", roomWord) || (roomWord
       ? chooseWeighted([
           [createRoomWordResponse(roomWord, "warning"), 8],
           [chooseRandom(RESPONSE_LIBRARY.warning), 4],
