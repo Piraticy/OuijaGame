@@ -853,6 +853,12 @@ function stopWelcomeAudio() {
   }, 520);
 }
 
+function attemptAutoStartAudio() {
+  startWelcomeAudio().catch(() => {
+    // Browsers may still block audio until a user gesture.
+  });
+}
+
 function normalizeRoomId(value) {
   return String(value || "")
     .toUpperCase()
@@ -1279,12 +1285,24 @@ enterSiteButton.addEventListener("click", () => {
 });
 
 welcomeScreenElement.addEventListener("pointerdown", () => {
-  startWelcomeAudio();
+  attemptAutoStartAudio();
 }, { once: true });
 
 welcomeScreenElement.addEventListener("pointermove", () => {
-  startWelcomeAudio();
+  attemptAutoStartAudio();
 }, { once: true });
+
+document.addEventListener("touchstart", attemptAutoStartAudio, { once: true, passive: true });
+document.addEventListener("pointerdown", attemptAutoStartAudio, { once: true });
+document.addEventListener("click", attemptAutoStartAudio, { once: true });
+window.addEventListener("focus", attemptAutoStartAudio, { once: true });
+window.addEventListener("pageshow", attemptAutoStartAudio, { once: true });
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    attemptAutoStartAudio();
+  }
+});
 
 roomInput.addEventListener("input", () => {
   const roomId = normalizeRoomId(roomInput.value);
@@ -1409,7 +1427,7 @@ window.addEventListener("appinstalled", () => {
 
 window.addEventListener("keydown", (event) => {
   if (!welcomeScreenElement.classList.contains("is-hidden")) {
-    startWelcomeAudio();
+    attemptAutoStartAudio();
   }
 
   if (event.key === "Enter" && !welcomeScreenElement.classList.contains("is-hidden")) {
@@ -1428,6 +1446,7 @@ nameInput.value = getSavedName();
 roomInput.value = roomFromUrl || generateRoomCode();
 desiredRoomId = roomFromUrl;
 seedWelcomeScreen();
+attemptAutoStartAudio();
 updateInviteLink(roomInput.value);
 updateSpiritUi(currentSpiritState);
 updateInstallUi();
