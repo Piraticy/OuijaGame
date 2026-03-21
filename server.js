@@ -126,7 +126,7 @@ const BOARD_TARGETS = {
   9: { x: 76, y: 58 },
   0: { x: 83, y: 59 }
 };
-const SPIRIT_REST_CURSOR = { x: 50, y: 73 };
+const SPIRIT_REST_CURSOR = { x: 50, y: 70 };
 
 const RESPONSE_LIBRARY = {
   certainty: ["YES", "NO", "NOT YET", "LATER"],

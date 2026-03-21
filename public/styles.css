@@ -1147,10 +1147,24 @@ body[data-haunt-level="Attached"] #invite-link {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;
-  width: min(100%, 86%);
+  width: min(100%, 92%);
   margin-inline: auto;
-  padding-inline: 8px;
+  padding-inline: 0;
   font-size: clamp(1rem, 1.8vw, 1.6rem);
+}
+
+.board-top {
+  margin-top: 2px;
+}
+
+.board-top span:first-child,
+.board-bottom span:first-child {
+  text-align: left;
+}
+
+.board-top span:last-child,
+.board-bottom span:last-child {
+  text-align: right;
 }
 
 .letters {
@@ -1158,7 +1172,7 @@ body[data-haunt-level="Attached"] #invite-link {
   grid-template-columns: repeat(13, minmax(0, 1fr));
   align-items: center;
   justify-items: center;
-  width: min(100%, 82%);
+  width: min(100%, 80%);
   margin-inline: auto;
   margin-top: clamp(38px, 7vw, 64px);
   font-size: clamp(1rem, 1.7vw, 1.5rem);
@@ -1173,7 +1187,7 @@ body[data-haunt-level="Attached"] #invite-link {
   grid-template-columns: repeat(10, minmax(0, 1fr));
   align-items: center;
   justify-items: center;
-  width: min(100%, 62%);
+  width: min(100%, 58%);
   margin-inline: auto;
   margin-top: clamp(26px, 6vw, 52px);
   font-size: clamp(1.05rem, 1.7vw, 1.5rem);
@@ -1188,8 +1202,8 @@ body[data-haunt-level="Attached"] #invite-link {
   left: 50%;
   top: 72%;
   z-index: 3;
-  width: 102px;
-  height: 102px;
+  width: 88px;
+  height: 88px;
   padding: 0;
   border-radius: 38% 38% 62% 62%;
   background:
@@ -1221,8 +1235,8 @@ body[data-haunt-level="Attached"] #invite-link {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 17px;
-  height: 26px;
+  width: 14px;
+  height: 21px;
   border-radius: 50% 50% 44% 44%;
   transform: translate(-50%, -50%) rotate(-45deg);
   background:

@@ -183,7 +183,7 @@ const SOUND_PROFILES = [
     ]
   }
 ];
-const RESTING_CURSOR = { x: 50, y: 73 };
+const RESTING_CURSOR = { x: 50, y: 70 };
 
 let currentRoomId = "";
 let desiredRoomId = "";
@@ -1389,8 +1389,8 @@ function updateSpiritUi(spirit) {
   toggleSpiritButton.textContent = "Always On";
   toggleSpiritButton.disabled = true;
   spiritStatusElement.textContent = isActive
-    ? `${currentSpiritState.name} is answering now.`
-    : `${currentSpiritState.name} listens and answers.`;
+    ? `${currentSpiritState.name} answers now.`
+    : `${currentSpiritState.name} listens.`;
   if (hauntingLevelElement) {
     hauntingLevelElement.textContent = `Haunting level: ${currentSpiritState.hauntingLevel || "Veiled"}.`;
   }
