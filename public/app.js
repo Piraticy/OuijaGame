@@ -568,6 +568,14 @@ function getWelcomeRoomCode() {
   return (roomInput?.value || desiredRoomId || "SEANCE").trim().toUpperCase();
 }
 
+function setWelcomeShadowFigure(active) {
+  if (!welcomeScreenElement) {
+    return;
+  }
+
+  welcomeScreenElement.classList.toggle("has-shadow-figure", Boolean(active));
+}
+
 function moveWelcomePlanchetteShadow(target) {
   if (!welcomePlanchetteShadowElement || welcomeClosing) {
     return;
@@ -656,10 +664,10 @@ function scheduleWelcomeScares() {
       fakeBoardMovement();
     }
 
-    queueWelcomeTimer(runScare, randomBetween(1200, 3200));
+    queueWelcomeTimer(runScare, randomBetween(2000, 4400));
   };
 
-  queueWelcomeTimer(runScare, randomBetween(700, 1800));
+  queueWelcomeTimer(runScare, randomBetween(1200, 2600));
 }
 
 function seedWelcomeScreen() {
@@ -669,6 +677,7 @@ function seedWelcomeScreen() {
 
   welcomeTitleElement.textContent = randomFrom(WELCOME_TITLES);
   setWelcomeCopyText(randomFrom(WELCOME_LINES));
+  setWelcomeShadowFigure(Math.random() < 0.16);
 
   const savedName = getSavedName();
   const roomCount = getLocalRoomVisitCount(getWelcomeRoomCode());
@@ -752,6 +761,7 @@ function dismissWelcomeScreen() {
     boardElement.classList.remove("is-welcome-moving");
     welcomeScreenElement.classList.add("is-hidden");
     welcomeScreenElement.classList.remove("is-jump");
+    welcomeScreenElement.classList.remove("has-shadow-figure");
     updatePlanchette({ x: 50, y: 72 });
     clearWelcomePlanchetteShadow();
   }, 420);

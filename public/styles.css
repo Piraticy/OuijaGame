@@ -84,6 +84,10 @@ input {
   transition: opacity 260ms ease, visibility 260ms ease;
 }
 
+.welcome-screen.has-shadow-figure .welcome-shadow-figure {
+  opacity: 0.18;
+}
+
 .welcome-screen.is-hidden {
   opacity: 0;
   visibility: hidden;
@@ -112,6 +116,16 @@ input {
   background: rgba(26, 17, 13, 0.9);
   box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45);
   text-align: center;
+}
+
+.welcome-panel::before {
+  content: "";
+  position: absolute;
+  inset: -14% -10%;
+  border-radius: 36px;
+  background: radial-gradient(circle at 50% 55%, rgba(255, 244, 228, 0.08), transparent 58%);
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 .welcome-title {
@@ -332,6 +346,15 @@ input {
   mix-blend-mode: screen;
 }
 
+.welcome-smoke-front {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2;
+  mix-blend-mode: screen;
+}
+
 .smoke {
   position: absolute;
   width: 42vw;
@@ -343,6 +366,7 @@ input {
   filter: blur(26px);
   opacity: 0.52;
   animation: smokeDrift 14s ease-in-out infinite alternate;
+  will-change: transform, opacity;
 }
 
 .smoke-a {
@@ -386,6 +410,7 @@ input {
   filter: blur(34px);
   opacity: 0.68;
   animation: smokeRise 14s ease-in-out infinite;
+  will-change: transform, opacity;
 }
 
 .smoke-deep-a {
@@ -407,6 +432,53 @@ input {
   height: min(40vw, 460px);
   animation-duration: 16s;
   animation-delay: -8s;
+}
+
+.smoke-front {
+  position: absolute;
+  top: 50%;
+  width: min(40vw, 420px);
+  height: min(22vw, 220px);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(226, 236, 244, 0.18), rgba(190, 208, 220, 0.08) 38%, transparent 72%);
+  filter: blur(22px);
+  opacity: 0.22;
+  animation: smokeCross 24s linear infinite;
+  will-change: transform, opacity;
+}
+
+.smoke-front-a {
+  left: -18%;
+  animation-delay: -8s;
+}
+
+.smoke-front-b {
+  right: -20%;
+  top: 42%;
+  width: min(34vw, 360px);
+  height: min(20vw, 190px);
+  animation-duration: 28s;
+  animation-direction: reverse;
+  animation-delay: -16s;
+}
+
+.welcome-shadow-figure {
+  position: absolute;
+  left: 50%;
+  bottom: 14%;
+  z-index: 1;
+  width: min(18vw, 170px);
+  height: min(42vw, 320px);
+  transform: translateX(-50%);
+  opacity: 0;
+  pointer-events: none;
+  filter: blur(10px);
+  background:
+    radial-gradient(circle at 50% 18%, rgba(18, 14, 13, 0.68), transparent 22%),
+    radial-gradient(circle at 50% 52%, rgba(20, 14, 13, 0.54), transparent 44%),
+    linear-gradient(180deg, rgba(10, 8, 8, 0.58), rgba(10, 8, 8, 0.12) 74%, transparent);
+  animation: shadowFigureDrift 26s ease-in-out infinite;
+  will-change: transform, opacity;
 }
 
 .app-shell {
@@ -749,6 +821,30 @@ button:hover {
   background: radial-gradient(circle at 50% 34%, #fff4c4 0 24%, #ffcb67 44%, #e77223 76%);
   box-shadow: 0 0 24px rgba(255, 191, 103, 0.46);
   animation: candleFlicker 1.8s ease-in-out infinite alternate;
+}
+
+.candle-smoke {
+  position: absolute;
+  left: 50%;
+  top: -70px;
+  width: 72px;
+  height: 130px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 70%, rgba(210, 224, 232, 0.22), rgba(154, 170, 182, 0.08) 36%, transparent 72%);
+  filter: blur(16px);
+  opacity: 0.28;
+  animation: candleSmokeRise 20s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.candle-smoke-a {
+  animation-delay: -6s;
+}
+
+.candle-smoke-b {
+  animation-duration: 23s;
+  animation-delay: -12s;
 }
 
 .board {
@@ -1203,6 +1299,57 @@ button:disabled {
   100% {
     transform: translate3d(18px, -92px, 0) scale(1.14);
     opacity: 0.08;
+  }
+}
+
+@keyframes smokeCross {
+  0% {
+    transform: translate3d(-8vw, -8px, 0) scale(0.96);
+    opacity: 0;
+  }
+
+  18% {
+    opacity: 0.18;
+  }
+
+  52% {
+    opacity: 0.26;
+  }
+
+  100% {
+    transform: translate3d(84vw, 10px, 0) scale(1.08);
+    opacity: 0;
+  }
+}
+
+@keyframes candleSmokeRise {
+  0% {
+    transform: translate3d(-50%, 10px, 0) scale(0.94);
+    opacity: 0.08;
+  }
+
+  28% {
+    opacity: 0.2;
+  }
+
+  62% {
+    opacity: 0.3;
+  }
+
+  100% {
+    transform: translate3d(calc(-50% + 14px), -96px, 0) scale(1.16);
+    opacity: 0;
+  }
+}
+
+@keyframes shadowFigureDrift {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(10px) scale(0.98);
+  }
+
+  50% {
+    transform: translateX(calc(-50% + 12px)) translateY(-12px) scale(1.03);
   }
 }
 
