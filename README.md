@@ -34,7 +34,6 @@ Open the folder in VS Code and run the `Ouija Online Dev` launch configuration. 
 
 - On desktop browsers that support PWAs, use the in-app `Install` button.
 - On iPhone or iPad, open the site in Safari, tap `Share`, then choose `Add to Home Screen`.
-- The app includes a manifest, install UI, icons, and a service worker for a more app-like experience.
 
 ## Solo Play
 
