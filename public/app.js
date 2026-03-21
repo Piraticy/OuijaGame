@@ -60,6 +60,7 @@ const generateRoomButton = document.getElementById("generate-room");
 const inviteLinkInput = document.getElementById("invite-link");
 const copyInviteButton = document.getElementById("copy-invite");
 const toggleSpiritButton = document.getElementById("toggle-spirit");
+const spiritCardElement = document.getElementById("spirit-card");
 const spiritStatusElement = document.getElementById("spirit-status");
 const hauntingLevelElement = document.getElementById("haunting-level");
 const spiritAnswerElement = document.getElementById("spirit-answer");
@@ -80,6 +81,8 @@ const welcomeOmenElement = document.getElementById("welcome-omen");
 const welcomePlanchetteShadowElement = document.getElementById("welcome-planchette-shadow");
 
 const NAME_STORAGE_KEY = "ouija-online-name";
+const LOCAL_VEIL_VISITS_KEY = "ouija-online-veil-visits";
+const LOCAL_ROOM_VISITS_KEY = "ouija-online-room-visits";
 const WELCOME_TITLES = [
   "It heard you.",
   "It woke up.",
@@ -208,6 +211,8 @@ let welcomeTimers = [];
 let welcomeClosing = false;
 let welcomeTitleResetTimer = null;
 let welcomeTypingRun = 0;
+let hauntingRevealTimer = null;
+let hauntingRevealHoldTimer = null;
 
 function setStatus(text, isError = false) {
   connectionStatus.textContent = text;
@@ -226,6 +231,40 @@ function randomFrom(items) {
   return items[Math.floor(Math.random() * items.length)];
 }
 
+function getLocalVeilVisits() {
+  return Number(localStorage.getItem(LOCAL_VEIL_VISITS_KEY) || "0");
+}
+
+function getLocalRoomVisits() {
+  try {
+    return JSON.parse(localStorage.getItem(LOCAL_ROOM_VISITS_KEY) || "{}");
+  } catch (_error) {
+    return {};
+  }
+}
+
+function getLocalRoomVisitCount(roomId) {
+  const visits = getLocalRoomVisits();
+  return Number(visits[roomId] || 0);
+}
+
+function recordLocalVeilVisit(roomId, name) {
+  const safeRoomId = normalizeRoomId(roomId);
+  const visits = getLocalRoomVisits();
+  const total = getLocalVeilVisits() + 1;
+
+  localStorage.setItem(LOCAL_VEIL_VISITS_KEY, String(total));
+
+  if (safeRoomId) {
+    visits[safeRoomId] = Number(visits[safeRoomId] || 0) + 1;
+    localStorage.setItem(LOCAL_ROOM_VISITS_KEY, JSON.stringify(visits));
+  }
+
+  if (name) {
+    saveName(name);
+  }
+}
+
 function queueWelcomeTimer(callback, delay) {
   const timer = window.setTimeout(() => {
     welcomeTimers = welcomeTimers.filter((item) => item !== timer);
@@ -233,6 +272,53 @@ function queueWelcomeTimer(callback, delay) {
   }, delay);
 
   welcomeTimers.push(timer);
+}
+
+function getHauntingMix(level = "Veiled") {
+  switch (level) {
+    case "Attached":
+      return { boardLevel: "Attached", musicGain: 0.085, welcomeGain: 0.125 };
+    case "Awake":
+      return { boardLevel: "Awake", musicGain: 0.07, welcomeGain: 0.11 };
+    case "Watching":
+      return { boardLevel: "Watching", musicGain: 0.06, welcomeGain: 0.095 };
+    default:
+      return { boardLevel: "Veiled", musicGain: 0.05, welcomeGain: 0.085 };
+  }
+}
+
+function revealHauntingLevel() {
+  if (!hauntingLevelElement) {
+    return;
+  }
+
+  hauntingLevelElement.classList.add("is-revealed");
+
+  if (hauntingRevealTimer) {
+    window.clearTimeout(hauntingRevealTimer);
+  }
+
+  hauntingRevealTimer = window.setTimeout(() => {
+    hauntingLevelElement.classList.remove("is-revealed");
+    hauntingRevealTimer = null;
+  }, 5200);
+}
+
+function applyHauntingPresence() {
+  const mix = getHauntingMix(currentSpiritState.hauntingLevel);
+
+  boardElement.dataset.hauntLevel = mix.boardLevel;
+
+  if (masterGain && audioContext && soundEnabled) {
+    masterGain.gain.setTargetAtTime(mix.musicGain, audioContext.currentTime, 0.45);
+  }
+
+  if (audioContext && welcomeAudioState.started && welcomeAudioState.gain && welcomeScreenElement.classList.contains("is-hidden")) {
+    const now = audioContext.currentTime;
+    welcomeAudioState.gain.gain.cancelScheduledValues(now);
+    welcomeAudioState.gain.gain.setValueAtTime(Math.max(welcomeAudioState.gain.gain.value, 0.0001), now);
+    welcomeAudioState.gain.gain.linearRampToValueAtTime(mix.welcomeGain, now + 0.8);
+  }
 }
 
 function clearWelcomeTimers() {
@@ -503,6 +589,26 @@ function seedWelcomeScreen() {
 
   welcomeTitleElement.textContent = randomFrom(WELCOME_TITLES);
   setWelcomeCopyText(randomFrom(WELCOME_LINES));
+
+  const savedName = getSavedName();
+  const roomCount = getLocalRoomVisitCount(getWelcomeRoomCode());
+  const totalVisits = getLocalVeilVisits();
+
+  if ((roomCount > 0 || totalVisits > 1) && savedName && savedName !== "Guest") {
+    queueWelcomeTimer(() => {
+      if (welcomeClosing || welcomeScreenElement.classList.contains("is-hidden")) {
+        return;
+      }
+
+      typeWelcomeWhisper(randomFrom([
+        `I REMEMBER ${savedName}`,
+        `WELCOME BACK ${savedName}`,
+        "THE VEIL REMEMBERS YOU"
+      ]));
+      flashWelcomeStrobe(Math.random() > 0.5 ? "red" : "white");
+    }, randomBetween(850, 1450));
+  }
+
   scheduleWelcomeScares();
 }
 
@@ -526,14 +632,15 @@ function dismissWelcomeScreen() {
   welcomeClosing = true;
 
   if (audioContext && welcomeAudioState.started && welcomeAudioState.gain) {
+    const mix = getHauntingMix(currentSpiritState.hauntingLevel);
     const now = audioContext.currentTime;
     welcomeAudioState.gain.gain.cancelScheduledValues(now);
     welcomeAudioState.gain.gain.setValueAtTime(Math.max(welcomeAudioState.gain.gain.value, 0.0001), now);
-    welcomeAudioState.gain.gain.linearRampToValueAtTime(0.085, now + 0.8);
+    welcomeAudioState.gain.gain.linearRampToValueAtTime(mix.welcomeGain, now + 0.8);
   }
 
   if (masterGain && audioContext) {
-    masterGain.gain.setTargetAtTime(0.055, audioContext.currentTime, 0.45);
+    masterGain.gain.setTargetAtTime(getHauntingMix(currentSpiritState.hauntingLevel).musicGain, audioContext.currentTime, 0.45);
   }
 
   queueWelcomeTimer(() => {
@@ -1110,6 +1217,7 @@ function updateSpiritUi(spirit) {
     hauntingLevelElement.textContent = `Haunting level: ${currentSpiritState.hauntingLevel || "Veiled"}.`;
   }
   spiritAnswerElement.textContent = lastAnswer;
+  applyHauntingPresence();
   setWhisperLine(
     isActive
       ? `${currentSpiritState.name} moves beneath your hands.`
@@ -1270,7 +1378,7 @@ async function toggleSound() {
     }
 
     soundEnabled = true;
-    masterGain.gain.setTargetAtTime(0.12, audioContext.currentTime, 0.35);
+    masterGain.gain.setTargetAtTime(getHauntingMix(currentSpiritState.hauntingLevel).musicGain, audioContext.currentTime, 0.35);
     await startWelcomeAudio();
     toggleSoundButton.textContent = "Sound On";
     setStatus("Haunted score enabled.");
@@ -1420,6 +1528,31 @@ welcomeScreenElement.addEventListener("pointermove", () => {
   attemptAutoStartAudio();
 }, { once: true });
 
+if (spiritCardElement) {
+  const beginRevealHold = () => {
+    if (hauntingRevealHoldTimer) {
+      window.clearTimeout(hauntingRevealHoldTimer);
+    }
+
+    hauntingRevealHoldTimer = window.setTimeout(() => {
+      revealHauntingLevel();
+      hauntingRevealHoldTimer = null;
+    }, 900);
+  };
+
+  const cancelRevealHold = () => {
+    if (hauntingRevealHoldTimer) {
+      window.clearTimeout(hauntingRevealHoldTimer);
+      hauntingRevealHoldTimer = null;
+    }
+  };
+
+  spiritCardElement.addEventListener("pointerdown", beginRevealHold);
+  spiritCardElement.addEventListener("pointerup", cancelRevealHold);
+  spiritCardElement.addEventListener("pointerleave", cancelRevealHold);
+  spiritCardElement.addEventListener("pointercancel", cancelRevealHold);
+}
+
 document.addEventListener("touchstart", attemptAutoStartAudio, { once: true, passive: true });
 document.addEventListener("pointerdown", attemptAutoStartAudio, { once: true });
 document.addEventListener("click", attemptAutoStartAudio, { once: true });
@@ -1511,6 +1644,7 @@ socket.on("room:joined", (state) => {
   syncUrlRoom(state.roomId);
   updateInviteLink(state.roomId);
   updateSpiritUi(state.spirit);
+  recordLocalVeilVisit(state.roomId, nameInput.value.trim().slice(0, 18) || "Guest");
   setStatus(`Connected to room ${state.roomId}`);
 });
 

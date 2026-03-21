@@ -10,6 +10,9 @@
   --accent-soft: rgba(244, 188, 91, 0.2);
   --danger: #f7846c;
   --shadow: rgba(0, 0, 0, 0.45);
+  --haunt-lift: 4px;
+  --haunt-glow-size: 70px;
+  --haunt-glow-alpha: 0.16;
 }
 
 * {
@@ -528,6 +531,15 @@ button:hover {
   font-size: 0.72rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 180ms ease, transform 180ms ease;
+  pointer-events: none;
+}
+
+.haunting-level.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .install-help {
@@ -721,12 +733,30 @@ button:hover {
     inset 0 1px 0 rgba(255, 255, 255, 0.22),
     inset 0 -18px 38px rgba(36, 16, 6, 0.4),
     0 36px 70px rgba(0, 0, 0, 0.35),
-    0 0 70px rgba(196, 229, 255, 0.16);
+    0 0 var(--haunt-glow-size) rgba(196, 229, 255, var(--haunt-glow-alpha));
   animation: boardPulse 2.3s ease-in-out infinite;
 }
 
 .board.is-whispering {
   animation-duration: 1.2s;
+}
+
+.board[data-haunt-level="Watching"] {
+  --haunt-lift: 5px;
+  --haunt-glow-size: 78px;
+  --haunt-glow-alpha: 0.18;
+}
+
+.board[data-haunt-level="Awake"] {
+  --haunt-lift: 7px;
+  --haunt-glow-size: 90px;
+  --haunt-glow-alpha: 0.23;
+}
+
+.board[data-haunt-level="Attached"] {
+  --haunt-lift: 10px;
+  --haunt-glow-size: 112px;
+  --haunt-glow-alpha: 0.3;
 }
 
 .board.is-welcome-moving {
@@ -954,7 +984,7 @@ button:disabled {
   }
 
   50% {
-    transform: translateY(-4px);
+    transform: translateY(calc(-1 * var(--haunt-lift, 4px)));
   }
 }
 
