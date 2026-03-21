@@ -2,6 +2,14 @@
 
 A small multiplayer Ouija-style browser game built with Node, Express, and Socket.IO.
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Piraticy/OuijaGame)
+
+## Version
+
+- Current version: `1.0.0`
+- Created by `Piraticy`
+- Source: [github.com/Piraticy/OuijaGame](https://github.com/Piraticy/OuijaGame)
+
 ## Features
 
 - Join the same room from multiple browsers
@@ -36,7 +44,31 @@ Join a room by yourself and use `Summon` to enable the fictional solo presence. 
 
 ## Deploy Online
 
-This project is ready for simple online hosting with either Node or Docker.
+This project is ready for online hosting as a Node web service. For the fastest fully working multiplayer deploy, use Render.
+
+### Render Recommended
+
+This app uses a live Node + Socket.IO server, so Render is the easiest host here for keeping the real-time multiplayer board working.
+
+#### One-click deploy
+
+1. Click the `Deploy to Render` button above
+2. Sign in to Render and connect your GitHub account if needed
+3. Approve the Blueprint from this repo
+4. Wait for the first deploy to finish
+5. Open the generated `onrender.com` URL and test joining a room from two tabs or devices
+
+#### Manual Render deploy
+
+1. Open Render and choose `New > Blueprint` or `New > Web Service`
+2. Connect [github.com/Piraticy/OuijaGame](https://github.com/Piraticy/OuijaGame)
+3. Let Render use the included `render.yaml`
+4. Confirm the service uses `npm install` to build, `npm start` to run, and `/status` for health checks
+5. Deploy and use the generated `onrender.com` URL as the public game link
+
+#### Free plan note
+
+If you choose a free Render web service, it can spin down after about 15 minutes of inactivity, so the first request after idle can take a little time to wake up.
 
 ### Docker
 
@@ -47,15 +79,6 @@ This project is ready for simple online hosting with either Node or Docker.
 ### App Hosts
 
 The repo now includes a `Procfile`, a `Dockerfile`, and a `/status` endpoint, so it can be deployed on hosts that support Node apps or Docker containers. Point your host at the repository, expose port `3000`, and keep `HOST=0.0.0.0`.
-
-### Render
-
-This repo now includes a `render.yaml` blueprint for a Node web service. After pushing the code to GitHub:
-
-1. Create a new `Web Service` or `Blueprint` in Render
-2. Connect the GitHub repository
-3. Let Render use the included `render.yaml`
-4. Deploy and use the generated `onrender.com` URL as the installable app link
 
 ## Notes
 
