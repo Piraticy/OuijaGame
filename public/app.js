@@ -106,6 +106,74 @@ const WELCOME_BOARD_OMENS = [
   { x: 58, y: 62 },
   { x: 42, y: 60 }
 ];
+const SOUND_PROFILES = [
+  {
+    droneFrequency: 48,
+    undertoneFrequency: 34,
+    pulseFrequency: 88,
+    noiseGain: 0.022,
+    droneGain: 0.034,
+    undertoneGain: 0.016,
+    phraseDelay: [4300, 5000],
+    whisperChance: 0.34,
+    bassChance: 0.12,
+    staticChance: 0.08,
+    phrases: [
+      [146.83, 174.61, 164.81, 130.81],
+      [155.56, 185.0, 164.81, 146.83]
+    ]
+  },
+  {
+    droneFrequency: 52,
+    undertoneFrequency: 39,
+    pulseFrequency: 92,
+    noiseGain: 0.026,
+    droneGain: 0.038,
+    undertoneGain: 0.018,
+    phraseDelay: [4500, 5300],
+    whisperChance: 0.42,
+    bassChance: 0.18,
+    staticChance: 0.12,
+    phrases: [
+      [146.83, 146.83, 196.0, 174.61],
+      [130.81, 164.81, 174.61, 146.83],
+      [155.56, 185.0, 174.61, 138.59]
+    ]
+  },
+  {
+    droneFrequency: 44,
+    undertoneFrequency: 31,
+    pulseFrequency: 80,
+    noiseGain: 0.02,
+    droneGain: 0.032,
+    undertoneGain: 0.014,
+    phraseDelay: [5200, 6100],
+    whisperChance: 0.28,
+    bassChance: 0.08,
+    staticChance: 0.06,
+    phrases: [
+      [130.81, 155.56, 174.61, 123.47],
+      [138.59, 164.81, 174.61, 146.83]
+    ]
+  },
+  {
+    droneFrequency: 56,
+    undertoneFrequency: 42,
+    pulseFrequency: 96,
+    noiseGain: 0.029,
+    droneGain: 0.04,
+    undertoneGain: 0.02,
+    phraseDelay: [4000, 4700],
+    whisperChance: 0.5,
+    bassChance: 0.22,
+    staticChance: 0.14,
+    phrases: [
+      [164.81, 196.0, 174.61, 146.83],
+      [146.83, 174.61, 155.56, 123.47],
+      [174.61, 207.65, 185.0, 146.83]
+    ]
+  }
+];
 
 let currentRoomId = "";
 let desiredRoomId = "";
@@ -129,7 +197,9 @@ let welcomeAudioState = {
   started: false,
   gain: null,
   nodes: [],
-  loopTimer: null
+  loopTimer: null,
+  effectTimer: null,
+  profile: randomFrom(SOUND_PROFILES)
 };
 let welcomeTimers = [];
 let welcomeClosing = false;
@@ -585,6 +655,7 @@ async function startWelcomeAudio() {
     return;
   }
 
+  const profile = welcomeAudioState.profile || randomFrom(SOUND_PROFILES);
   const gain = audioContext.createGain();
   const lowPass = audioContext.createBiquadFilter();
   const bandPass = audioContext.createBiquadFilter();
@@ -613,24 +684,24 @@ async function startWelcomeAudio() {
 
   noiseSource.buffer = noiseBuffer;
   noiseSource.loop = true;
-  noiseGain.gain.value = 0.026;
+  noiseGain.gain.value = profile.noiseGain;
   noiseSource.connect(noiseGain);
   noiseGain.connect(bandPass);
 
   drone.type = "triangle";
-  drone.frequency.setValueAtTime(52, now);
-  droneGain.gain.value = 0.038;
+  drone.frequency.setValueAtTime(profile.droneFrequency, now);
+  droneGain.gain.value = profile.droneGain;
   drone.connect(droneGain);
   droneGain.connect(lowPass);
 
   undertone.type = "sine";
-  undertone.frequency.setValueAtTime(39, now);
-  undertoneGain.gain.value = 0.018;
+  undertone.frequency.setValueAtTime(profile.undertoneFrequency, now);
+  undertoneGain.gain.value = profile.undertoneGain;
   undertone.connect(undertoneGain);
   undertoneGain.connect(lowPass);
 
   pulse.type = "sine";
-  pulse.frequency.setValueAtTime(92, now);
+  pulse.frequency.setValueAtTime(profile.pulseFrequency, now);
   pulseGain.gain.setValueAtTime(0.0001, now);
   pulseGain.gain.linearRampToValueAtTime(0.016, now + 1.4);
   pulseGain.gain.linearRampToValueAtTime(0.0001, now + 4.8);
@@ -648,7 +719,9 @@ async function startWelcomeAudio() {
     started: true,
     gain,
     nodes: [noiseSource, drone, undertone, pulse],
-    loopTimer: null
+    loopTimer: null,
+    effectTimer: null,
+    profile
   };
 
   soundEnabled = true;
@@ -657,6 +730,7 @@ async function startWelcomeAudio() {
   }
   toggleSoundButton.textContent = "Sound On";
   scheduleWelcomeMusicLoop(220);
+  scheduleAmbientMusicEffects();
 }
 
 function playWelcomeMusicNote(frequency, startAt, duration, gainScale = 1) {
@@ -709,24 +783,19 @@ function scheduleWelcomeMusicLoop(delayMs = 0) {
     return;
   }
 
+  const profile = welcomeAudioState.profile || randomFrom(SOUND_PROFILES);
+
   if (welcomeAudioState.loopTimer) {
     window.clearTimeout(welcomeAudioState.loopTimer);
     welcomeAudioState.loopTimer = null;
   }
-
-  const phrases = [
-    [146.83, 174.61, 164.81, 130.81],
-    [146.83, 146.83, 196.0, 174.61],
-    [130.81, 164.81, 174.61, 146.83],
-    [155.56, 185.0, 174.61, 138.59]
-  ];
 
   const startPhrase = () => {
     if (!audioContext || !welcomeAudioState.started || !welcomeAudioState.gain) {
       return;
     }
 
-    const phrase = randomFrom(phrases);
+    const phrase = randomFrom(profile.phrases);
     const now = audioContext.currentTime + 0.05;
 
     phrase.forEach((frequency, index) => {
@@ -737,22 +806,59 @@ function scheduleWelcomeMusicLoop(delayMs = 0) {
       playWelcomeMusicNote(frequency, startAt, duration, gainScale);
     });
 
-    if (Math.random() > 0.58) {
+    if (Math.random() < profile.whisperChance) {
       window.setTimeout(() => {
-        if (welcomeAudioState.started && !welcomeClosing) {
+        if (welcomeAudioState.started) {
           playWelcomeWhisperPulse();
         }
-      }, 900);
+      }, randomBetween(700, 1300));
     }
 
     welcomeAudioState.loopTimer = window.setTimeout(() => {
       startPhrase();
-    }, 4700);
+    }, randomBetween(profile.phraseDelay[0], profile.phraseDelay[1]));
   };
 
   welcomeAudioState.loopTimer = window.setTimeout(() => {
     startPhrase();
   }, delayMs);
+}
+
+function scheduleAmbientMusicEffects() {
+  if (!audioContext || !welcomeAudioState.started || !welcomeAudioState.gain) {
+    return;
+  }
+
+  const profile = welcomeAudioState.profile || randomFrom(SOUND_PROFILES);
+
+  if (welcomeAudioState.effectTimer) {
+    window.clearTimeout(welcomeAudioState.effectTimer);
+    welcomeAudioState.effectTimer = null;
+  }
+
+  const loopEffects = () => {
+    if (!audioContext || !welcomeAudioState.started || !welcomeAudioState.gain) {
+      return;
+    }
+
+    if (Math.random() < profile.whisperChance) {
+      playWelcomeWhisperPulse();
+    }
+
+    if (Math.random() < profile.bassChance) {
+      playWelcomeBassHit(0.8 + Math.random() * 0.45);
+    }
+
+    if (!welcomeScreenElement.classList.contains("is-hidden") && Math.random() < profile.staticChance) {
+      flashWelcomeStrobe(Math.random() > 0.45 ? "red" : "white");
+    } else if (welcomeScreenElement.classList.contains("is-hidden") && Math.random() < profile.staticChance) {
+      triggerStaticBurst(randomBetween(1, 2));
+    }
+
+    welcomeAudioState.effectTimer = window.setTimeout(loopEffects, randomBetween(4200, 9200));
+  };
+
+  welcomeAudioState.effectTimer = window.setTimeout(loopEffects, randomBetween(2600, 5200));
 }
 
 function playWelcomeBassHit(intensity = 1) {
@@ -833,6 +939,11 @@ function stopWelcomeAudio() {
     welcomeAudioState.loopTimer = null;
   }
 
+  if (welcomeAudioState.effectTimer) {
+    window.clearTimeout(welcomeAudioState.effectTimer);
+    welcomeAudioState.effectTimer = null;
+  }
+
   window.setTimeout(() => {
     welcomeAudioState.nodes.forEach((node) => {
       try {
@@ -848,7 +959,9 @@ function stopWelcomeAudio() {
       started: false,
       gain: null,
       nodes: [],
-      loopTimer: null
+      loopTimer: null,
+      effectTimer: null,
+      profile: randomFrom(SOUND_PROFILES)
     };
   }, 520);
 }
