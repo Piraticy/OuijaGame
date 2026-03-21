@@ -220,6 +220,21 @@ function chooseRandom(items) {
   return items[Math.floor(Math.random() * items.length)];
 }
 
+function chooseWeighted(entries) {
+  const total = entries.reduce((sum, entry) => sum + entry[1], 0);
+  let roll = Math.random() * total;
+
+  for (const [value, weight] of entries) {
+    roll -= weight;
+
+    if (roll <= 0) {
+      return value;
+    }
+  }
+
+  return entries[entries.length - 1][0];
+}
+
 function tokenizeAnswer(answer) {
   return answer
     .toUpperCase()
@@ -271,6 +286,18 @@ function extractQuestionProfile(question) {
     words,
     primaryWord,
     secondaryWord,
+    asksDirectPresence: /\b(is anyone there|are you there|are you here|is anybody there|can you hear me|do you hear me)\b/.test(
+      question.toLowerCase()
+    ),
+    asksName: /\b(what is your name|what's your name|who are you|tell me your name)\b/.test(
+      question.toLowerCase()
+    ),
+    asksAge: /\b(how old are you|your age|what age are you)\b/.test(question.toLowerCase()),
+    asksIntent: /\b(what do you want|why are you here|what do you need|why did you come)\b/.test(
+      question.toLowerCase()
+    ),
+    asksLocation: /\b(where are you|where do you hide|where should i look)\b/.test(question.toLowerCase()),
+    asksTemper: /\b(are you evil|are you bad|are you friendly|are you good)\b/.test(question.toLowerCase()),
     mentionsDoorway: /\bdoor|window|closet|hall|hallway|stairs|attic|basement|room|bed|mirror\b/.test(
       question.toLowerCase()
     ),
@@ -331,19 +358,108 @@ function createSubjectResponse(profile) {
   ]);
 }
 
+function createPresenceResponse(profile) {
+  if (profile.mentionsDoorway) {
+    return chooseWeighted([
+      ["YES", 5],
+      ["AT THE DOOR", 3],
+      ["IN THE HALL", 2],
+      ["BEHIND YOU", 2]
+    ]);
+  }
+
+  return chooseWeighted([
+    ["YES", 10],
+    ["I AM HERE", 4],
+    ["WITH YOU", 3],
+    ["ALWAYS", 2],
+    ["BEHIND YOU", 2]
+  ]);
+}
+
+function createIdentityResponse() {
+  return chooseWeighted([
+    ["THE VEIL", 8],
+    ["CALL ME VEIL", 4],
+    ["NO TRUE NAME", 3],
+    ["ONLY THE VEIL", 3],
+    ["NAMES ROT", 2]
+  ]);
+}
+
+function createLocationResponse(profile) {
+  if (profile.mentionsDoorway) {
+    return chooseWeighted([
+      ["AT THE DOOR", 5],
+      ["IN THE HALL", 4],
+      ["BEHIND THE DOOR", 3],
+      ["IN THE MIRROR", 2]
+    ]);
+  }
+
+  return chooseWeighted([
+    ["BEHIND YOU", 5],
+    ["IN THE WALLS", 3],
+    ["UNDER THE BED", 2],
+    ["IN THE MIRROR", 2],
+    ["BENEATH YOU", 2]
+  ]);
+}
+
+function createIntentResponse(profile) {
+  if (profile.primaryWord) {
+    return chooseWeighted([
+      [buildPhrase("I WANT", profile.primaryWord), 4],
+      [buildPhrase("YOU OPENED", profile.primaryWord), 3],
+      [buildPhrase("TO TAKE", profile.primaryWord), 2],
+      ["TO BE HEARD", 3]
+    ]);
+  }
+
+  return chooseWeighted([
+    ["TO BE HEARD", 5],
+    ["YOU CALLED ME", 4],
+    ["TO COME CLOSER", 3],
+    ["ONE MORE QUESTION", 2],
+    ["TO BE LET IN", 2]
+  ]);
+}
+
+function createTemperResponse() {
+  return chooseWeighted([
+    ["YES", 3],
+    ["NO", 4],
+    ["NOT ALWAYS", 3],
+    ["DO NOT ASK", 3],
+    ["KEEP DISTANCE", 2]
+  ]);
+}
+
 function createSpiritResponse(question) {
   const value = question.toLowerCase();
   const profile = extractQuestionProfile(question);
   let answer = chooseRandom(RESPONSE_LIBRARY.default);
 
-  if (profile.asksIdentity) {
-    answer = profile.primaryWord
-      ? chooseRandom([
-          buildPhrase("THE", profile.primaryWord, "KNOWS"),
-          buildPhrase("NO", profile.primaryWord),
-          buildPhrase(profile.primaryWord, "HAS A NAME")
-        ])
-      : chooseRandom(RESPONSE_LIBRARY.identity);
+  if (profile.asksDirectPresence) {
+    answer = createPresenceResponse(profile);
+  } else if (profile.asksName) {
+    answer = createIdentityResponse();
+  } else if (profile.asksAge) {
+    answer = chooseWeighted([
+      ["8", 2],
+      ["13", 4],
+      ["19", 3],
+      ["100", 2],
+      ["OLDER THAN YOU", 3]
+    ]);
+  } else if (profile.asksIntent) {
+    answer = createIntentResponse(profile);
+  } else if (profile.asksLocation) {
+    answer = createLocationResponse(profile);
+  } else if (profile.asksTemper) {
+    answer = createTemperResponse();
+  } else if (profile.asksIdentity) {
+    answer = createIdentityResponse();
   } else if (profile.asksTime) {
     answer = profile.primaryWord
       ? chooseRandom([
@@ -374,14 +490,15 @@ function createSpiritResponse(question) {
     answer = chooseRandom(RESPONSE_LIBRARY.feeling);
   } else if (/\bwhere\b/.test(value)) {
     answer = profile.primaryWord
-      ? chooseRandom([
-          buildPhrase("BEHIND", profile.primaryWord),
-          buildPhrase("UNDER", profile.primaryWord),
-          buildPhrase("PAST", profile.primaryWord)
+      ? chooseWeighted([
+          [buildPhrase("BEHIND", profile.primaryWord), 4],
+          [buildPhrase("UNDER", profile.primaryWord), 3],
+          [buildPhrase("PAST", profile.primaryWord), 2],
+          ["BEHIND YOU", 2]
         ])
-      : chooseRandom(["IN STATIC", "UNDER DUST", "BENEATH GLASS"]);
+      : chooseWeighted([["IN STATIC", 4], ["UNDER DUST", 2], ["BENEATH GLASS", 2], ["IN THE HALL", 3]]);
   } else if (/\bhello\b|\bhi\b|\bthere\b/.test(value)) {
-    answer = chooseRandom(["HELLO", "YES", "I AM HERE"]);
+    answer = chooseWeighted([["HELLO", 3], ["YES", 5], ["I AM HERE", 4]]);
   } else if (/\bbye\b|\bgoodbye\b|\bleave\b/.test(value)) {
     answer = chooseRandom(RESPONSE_LIBRARY.closing);
   } else if (/\bwant\b|\bneed\b/.test(value)) {
