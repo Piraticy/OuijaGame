@@ -122,6 +122,7 @@ const SOUND_PROFILES = [
     phraseDelay: [4300, 5000],
     whisperChance: 0.34,
     bassChance: 0.12,
+    suspenseChance: 0.18,
     staticChance: 0.08,
     phrases: [
       [146.83, 174.61, 164.81, 130.81],
@@ -138,6 +139,7 @@ const SOUND_PROFILES = [
     phraseDelay: [4500, 5300],
     whisperChance: 0.42,
     bassChance: 0.18,
+    suspenseChance: 0.24,
     staticChance: 0.12,
     phrases: [
       [146.83, 146.83, 196.0, 174.61],
@@ -155,6 +157,7 @@ const SOUND_PROFILES = [
     phraseDelay: [5200, 6100],
     whisperChance: 0.28,
     bassChance: 0.08,
+    suspenseChance: 0.14,
     staticChance: 0.06,
     phrases: [
       [130.81, 155.56, 174.61, 123.47],
@@ -171,6 +174,7 @@ const SOUND_PROFILES = [
     phraseDelay: [4000, 4700],
     whisperChance: 0.5,
     bassChance: 0.22,
+    suspenseChance: 0.28,
     staticChance: 0.14,
     phrases: [
       [164.81, 196.0, 174.61, 146.83],
@@ -1069,6 +1073,18 @@ function scheduleAmbientMusicEffects() {
       playWelcomeBassHit(0.8 + Math.random() * 0.45);
     }
 
+    if (
+      !welcomeScreenElement.classList.contains("is-hidden") &&
+      Math.random() < (profile.suspenseChance || 0.18)
+    ) {
+      playWelcomeSuspenseRise(0.92 + (Math.random() * 0.3));
+    } else if (
+      welcomeScreenElement.classList.contains("is-hidden") &&
+      Math.random() < ((profile.suspenseChance || 0.18) * 0.34)
+    ) {
+      playWelcomeSuspenseRise(0.72 + (Math.random() * 0.18));
+    }
+
     if (!welcomeScreenElement.classList.contains("is-hidden") && Math.random() < profile.staticChance) {
       flashWelcomeStrobe(Math.random() > 0.45 ? "red" : "white");
     } else if (welcomeScreenElement.classList.contains("is-hidden") && Math.random() < profile.staticChance) {
@@ -1101,6 +1117,52 @@ function playWelcomeBassHit(intensity = 1) {
   gain.connect(welcomeAudioState.gain);
   oscillator.start(now);
   oscillator.stop(now + 0.44);
+}
+
+function playWelcomeSuspenseRise(intensity = 1) {
+  if (!audioContext || !welcomeAudioState.started || !welcomeAudioState.gain) {
+    return;
+  }
+
+  const now = audioContext.currentTime;
+  const rise = audioContext.createOscillator();
+  const shadow = audioContext.createOscillator();
+  const riseGain = audioContext.createGain();
+  const shadowGain = audioContext.createGain();
+  const bandPass = audioContext.createBiquadFilter();
+  const duration = 1.8 + (Math.random() * 0.8);
+  const endAt = now + duration;
+
+  bandPass.type = "bandpass";
+  bandPass.frequency.setValueAtTime(540, now);
+  bandPass.frequency.linearRampToValueAtTime(1100, endAt);
+  bandPass.Q.value = 1.1;
+
+  rise.type = "sawtooth";
+  rise.frequency.setValueAtTime(78 * intensity, now);
+  rise.frequency.exponentialRampToValueAtTime(182 * intensity, endAt);
+  riseGain.gain.setValueAtTime(0.0001, now);
+  riseGain.gain.linearRampToValueAtTime(0.016 * intensity, now + 0.55);
+  riseGain.gain.linearRampToValueAtTime(0.028 * intensity, endAt - 0.18);
+  riseGain.gain.exponentialRampToValueAtTime(0.0001, endAt);
+
+  shadow.type = "triangle";
+  shadow.frequency.setValueAtTime(46 * intensity, now);
+  shadow.frequency.exponentialRampToValueAtTime(92 * intensity, endAt);
+  shadowGain.gain.setValueAtTime(0.0001, now);
+  shadowGain.gain.linearRampToValueAtTime(0.01 * intensity, now + 0.44);
+  shadowGain.gain.exponentialRampToValueAtTime(0.0001, endAt);
+
+  rise.connect(riseGain);
+  shadow.connect(shadowGain);
+  riseGain.connect(bandPass);
+  shadowGain.connect(bandPass);
+  bandPass.connect(welcomeAudioState.gain);
+
+  rise.start(now);
+  shadow.start(now);
+  rise.stop(endAt + 0.06);
+  shadow.stop(endAt + 0.06);
 }
 
 function playWelcomeWhisperPulse() {

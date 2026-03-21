@@ -315,6 +315,21 @@ input {
   inset: 0;
   overflow: hidden;
   pointer-events: none;
+  z-index: 0;
+  mix-blend-mode: screen;
+}
+
+.welcome-smoke-bottom {
+  position: absolute;
+  inset: auto 0 0;
+  height: 42%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(160, 180, 196, 0.06) 58%, rgba(188, 214, 232, 0.1)),
+    radial-gradient(circle at 50% 100%, rgba(192, 214, 232, 0.16), transparent 54%);
+  mix-blend-mode: screen;
 }
 
 .smoke {
@@ -326,7 +341,7 @@ input {
   border-radius: 50%;
   background: radial-gradient(circle, rgba(214, 226, 236, 0.12), transparent 66%);
   filter: blur(26px);
-  opacity: 0.38;
+  opacity: 0.52;
   animation: smokeDrift 14s ease-in-out infinite alternate;
 }
 
@@ -358,6 +373,40 @@ input {
   height: 24vw;
   animation-duration: 20s;
   animation-delay: -10s;
+}
+
+.smoke-deep {
+  position: absolute;
+  bottom: -18%;
+  width: min(58vw, 720px);
+  height: min(44vw, 520px);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 68%, rgba(220, 232, 240, 0.22), rgba(170, 186, 201, 0.1) 34%, transparent 68%);
+  filter: blur(34px);
+  opacity: 0.68;
+  animation: smokeRise 14s ease-in-out infinite;
+}
+
+.smoke-deep-a {
+  left: -12%;
+  animation-delay: -2s;
+}
+
+.smoke-deep-b {
+  left: 28%;
+  width: min(46vw, 560px);
+  height: min(38vw, 420px);
+  animation-duration: 11.5s;
+  animation-delay: -5s;
+}
+
+.smoke-deep-c {
+  right: -10%;
+  width: min(52vw, 640px);
+  height: min(40vw, 460px);
+  animation-duration: 16s;
+  animation-delay: -8s;
 }
 
 .app-shell {
@@ -1124,16 +1173,36 @@ button:disabled {
 @keyframes smokeDrift {
   0% {
     transform: translate3d(0, 0, 0) scale(0.94);
-    opacity: 0.18;
+    opacity: 0.26;
   }
 
   50% {
-    opacity: 0.42;
+    opacity: 0.56;
   }
 
   100% {
     transform: translate3d(34px, -24px, 0) scale(1.16);
-    opacity: 0.2;
+    opacity: 0.3;
+  }
+}
+
+@keyframes smokeRise {
+  0% {
+    transform: translate3d(0, 28px, 0) scale(0.92);
+    opacity: 0.14;
+  }
+
+  24% {
+    opacity: 0.5;
+  }
+
+  56% {
+    opacity: 0.72;
+  }
+
+  100% {
+    transform: translate3d(18px, -92px, 0) scale(1.14);
+    opacity: 0.08;
   }
 }
 
