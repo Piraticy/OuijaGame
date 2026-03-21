@@ -70,8 +70,41 @@ const installStatusElement = document.getElementById("install-status");
 const installAppButton = document.getElementById("install-app");
 const welcomeScreenElement = document.getElementById("welcome-screen");
 const enterSiteButton = document.getElementById("enter-site");
+const welcomeTitleElement = document.getElementById("welcome-title");
+const welcomeCopyElement = document.getElementById("welcome-copy");
+const welcomeFlashElement = document.getElementById("welcome-flash");
+const welcomeStrobeElement = document.getElementById("welcome-strobe");
+const welcomeOmenElement = document.getElementById("welcome-omen");
+const welcomePlanchetteShadowElement = document.getElementById("welcome-planchette-shadow");
 
 const NAME_STORAGE_KEY = "ouija-online-name";
+const WELCOME_TITLES = [
+  "It heard you.",
+  "It woke up.",
+  "It is waiting.",
+  "Do not blink."
+];
+const WELCOME_LINES = [
+  "Press enter.",
+  "Do not ask twice.",
+  "Keep the lights low.",
+  "Something moved."
+];
+const WELCOME_WARNINGS = [
+  "DON'T LOOK",
+  "STAY STILL",
+  "IT SEES",
+  "TURN BACK",
+  "TOO LATE",
+  "NOT ALONE"
+];
+const WELCOME_BOARD_OMENS = [
+  { x: 48, y: 68 },
+  { x: 54, y: 66 },
+  { x: 46, y: 64 },
+  { x: 58, y: 62 },
+  { x: 42, y: 60 }
+];
 
 let currentRoomId = "";
 let desiredRoomId = "";
@@ -91,6 +124,16 @@ let masterGain = null;
 let droneNodes = [];
 let noiseBuffer = null;
 let deferredInstallPrompt = null;
+let welcomeAudioState = {
+  started: false,
+  gain: null,
+  nodes: [],
+  loopTimer: null
+};
+let welcomeTimers = [];
+let welcomeClosing = false;
+let welcomeTitleResetTimer = null;
+let welcomeTypingRun = 0;
 
 function setStatus(text, isError = false) {
   connectionStatus.textContent = text;
@@ -101,12 +144,322 @@ function wait(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-function dismissWelcomeScreen() {
-  if (!welcomeScreenElement) {
+function randomBetween(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function randomFrom(items) {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+function queueWelcomeTimer(callback, delay) {
+  const timer = window.setTimeout(() => {
+    welcomeTimers = welcomeTimers.filter((item) => item !== timer);
+    callback();
+  }, delay);
+
+  welcomeTimers.push(timer);
+}
+
+function clearWelcomeTimers() {
+  welcomeTimers.forEach((timer) => window.clearTimeout(timer));
+  welcomeTimers = [];
+  welcomeTypingRun += 1;
+
+  if (welcomeTitleResetTimer) {
+    window.clearTimeout(welcomeTitleResetTimer);
+    welcomeTitleResetTimer = null;
+  }
+}
+
+function setWelcomeCopyText(text) {
+  if (!welcomeCopyElement) {
     return;
   }
 
-  welcomeScreenElement.classList.add("is-hidden");
+  const value = String(text || "");
+  welcomeCopyElement.textContent = value;
+  welcomeCopyElement.dataset.text = value;
+}
+
+function distortWelcomeCopy() {
+  if (!welcomeCopyElement || welcomeClosing) {
+    return;
+  }
+
+  welcomeCopyElement.classList.add("is-distorted");
+
+  queueWelcomeTimer(() => {
+    if (!welcomeCopyElement) {
+      return;
+    }
+
+    welcomeCopyElement.classList.remove("is-distorted");
+  }, 170);
+}
+
+function flashWelcomeOverlay() {
+  if (!welcomeFlashElement) {
+    return;
+  }
+
+  welcomeFlashElement.classList.remove("is-active");
+  void welcomeFlashElement.offsetWidth;
+  welcomeFlashElement.classList.add("is-active");
+}
+
+function flashWelcomeStrobe(color = "white") {
+  if (!welcomeStrobeElement || welcomeClosing) {
+    return;
+  }
+
+  welcomeStrobeElement.classList.remove("is-active", "is-white", "is-red");
+  welcomeStrobeElement.classList.add(color === "red" ? "is-red" : "is-white");
+  void welcomeStrobeElement.offsetWidth;
+  welcomeStrobeElement.classList.add("is-active");
+}
+
+function flickerWelcomeTitle() {
+  if (!welcomeTitleElement || welcomeClosing) {
+    return;
+  }
+
+  welcomeTitleElement.classList.remove("is-flicker");
+  void welcomeTitleElement.offsetWidth;
+  welcomeTitleElement.classList.add("is-flicker");
+}
+
+function flashWelcomeOmen(inverted = false) {
+  if (!welcomeOmenElement || welcomeClosing) {
+    return;
+  }
+
+  if (welcomeScreenElement) {
+    welcomeScreenElement.classList.remove("is-shaking");
+    void welcomeScreenElement.offsetWidth;
+    welcomeScreenElement.classList.add("is-shaking");
+  }
+
+  welcomeOmenElement.classList.toggle("is-inverted", inverted);
+  welcomeOmenElement.classList.remove("is-active");
+  void welcomeOmenElement.offsetWidth;
+  welcomeOmenElement.classList.add("is-active");
+  flashWelcomeStrobe(inverted ? "white" : "red");
+  playWelcomeBassHit(inverted ? 1.15 : 1);
+
+  queueWelcomeTimer(() => {
+    welcomeScreenElement?.classList.remove("is-shaking");
+    welcomeOmenElement.classList.remove("is-inverted");
+  }, 60);
+}
+
+function warnWelcomeTitle() {
+  if (!welcomeTitleElement || welcomeClosing) {
+    return;
+  }
+
+  const previousText = welcomeTitleElement.textContent;
+  welcomeTitleElement.textContent = randomFrom(WELCOME_WARNINGS);
+  flickerWelcomeTitle();
+  distortWelcomeCopy();
+
+  if (welcomeTitleResetTimer) {
+    window.clearTimeout(welcomeTitleResetTimer);
+  }
+
+  welcomeTitleResetTimer = window.setTimeout(() => {
+    welcomeTitleElement.textContent = previousText;
+  }, randomBetween(260, 620));
+}
+
+function pulseWelcomeLine() {
+  if (!welcomeCopyElement || welcomeClosing) {
+    return;
+  }
+
+  setWelcomeCopyText(randomFrom(WELCOME_LINES));
+  welcomeCopyElement.classList.add("is-pulsing");
+  distortWelcomeCopy();
+  playWelcomeWhisperPulse();
+
+  queueWelcomeTimer(() => {
+    welcomeCopyElement.classList.remove("is-pulsing");
+  }, 220);
+}
+
+function typeWelcomeWhisper(text) {
+  if (!welcomeCopyElement || welcomeClosing) {
+    return;
+  }
+
+  const runId = ++welcomeTypingRun;
+  const value = String(text || randomFrom(WELCOME_LINES)).toUpperCase();
+
+  setWelcomeCopyText("");
+  welcomeCopyElement.classList.add("is-pulsing");
+  welcomeCopyElement.classList.add("is-distorted");
+  playWelcomeWhisperPulse();
+
+  Array.from(value).forEach((character, index) => {
+    queueWelcomeTimer(() => {
+      if (runId !== welcomeTypingRun || !welcomeCopyElement) {
+        return;
+      }
+
+      setWelcomeCopyText((welcomeCopyElement.textContent || "") + character);
+
+      if (character !== " " && Math.random() > 0.62) {
+        playWelcomeWhisperPulse();
+      }
+    }, 26 * index + randomBetween(8, 34));
+  });
+
+  queueWelcomeTimer(() => {
+    if (runId !== welcomeTypingRun || !welcomeCopyElement) {
+      return;
+    }
+
+    welcomeCopyElement.classList.remove("is-pulsing");
+    welcomeCopyElement.classList.remove("is-distorted");
+  }, (26 * value.length) + 260);
+}
+
+function getWelcomeRoomCode() {
+  return (roomInput?.value || desiredRoomId || "SEANCE").trim().toUpperCase();
+}
+
+function moveWelcomePlanchetteShadow(target) {
+  if (!welcomePlanchetteShadowElement || welcomeClosing) {
+    return;
+  }
+
+  welcomePlanchetteShadowElement.style.left = `${target.x}%`;
+  welcomePlanchetteShadowElement.style.top = `${target.y}%`;
+  welcomePlanchetteShadowElement.classList.add("is-active");
+}
+
+function clearWelcomePlanchetteShadow() {
+  if (!welcomePlanchetteShadowElement) {
+    return;
+  }
+
+  welcomePlanchetteShadowElement.classList.remove("is-active");
+  welcomePlanchetteShadowElement.style.left = "50%";
+  welcomePlanchetteShadowElement.style.top = "72%";
+}
+
+function fakeBoardMovement() {
+  if (!welcomeScreenElement || welcomeScreenElement.classList.contains("is-hidden") || welcomeClosing) {
+    return;
+  }
+
+  const omenPoint = randomFrom(WELCOME_BOARD_OMENS);
+  const shadowPoint = {
+    x: Math.max(8, Math.min(92, omenPoint.x + randomBetween(-10, 12))),
+    y: Math.max(14, Math.min(84, omenPoint.y + randomBetween(-8, 10)))
+  };
+
+  updatePlanchette(omenPoint);
+  boardElement.classList.add("is-welcome-moving");
+  welcomeScreenElement.classList.add("is-board-omen");
+  moveWelcomePlanchetteShadow(shadowPoint);
+  distortWelcomeCopy();
+  playWelcomeWhisperPulse();
+
+  queueWelcomeTimer(() => {
+    boardElement.classList.remove("is-welcome-moving");
+    welcomeScreenElement.classList.remove("is-board-omen");
+    updatePlanchette({ x: 50, y: 72 });
+    clearWelcomePlanchetteShadow();
+  }, 360);
+}
+
+function scheduleWelcomeScares() {
+  clearWelcomeTimers();
+
+  const runScare = () => {
+    if (!welcomeScreenElement || welcomeScreenElement.classList.contains("is-hidden") || welcomeClosing) {
+      return;
+    }
+
+    const roll = Math.random();
+
+    if (roll < 0.18) {
+      flickerWelcomeTitle();
+    } else if (roll < 0.34) {
+      warnWelcomeTitle();
+    } else if (roll < 0.5) {
+      pulseWelcomeLine();
+    } else if (roll < 0.66) {
+      typeWelcomeWhisper(randomFrom([
+        "it is near",
+        "do not turn",
+        "it knows",
+        "keep still"
+      ]));
+    } else if (roll < 0.78) {
+      typeWelcomeWhisper(`ROOM ${getWelcomeRoomCode()}`);
+      flashWelcomeStrobe(Math.random() > 0.5 ? "red" : "white");
+    } else if (roll < 0.88) {
+      fakeBoardMovement();
+    } else {
+      flickerWelcomeTitle();
+      flashWelcomeOverlay();
+      flashWelcomeOmen(Math.random() > 0.5);
+      warnWelcomeTitle();
+      typeWelcomeWhisper(randomFrom([
+        "do not look back",
+        "it is behind you",
+        `I KNOW ${getWelcomeRoomCode()}`,
+        "say goodbye now"
+      ]));
+      fakeBoardMovement();
+    }
+
+    queueWelcomeTimer(runScare, randomBetween(1200, 3200));
+  };
+
+  queueWelcomeTimer(runScare, randomBetween(700, 1800));
+}
+
+function seedWelcomeScreen() {
+  if (!welcomeTitleElement || !welcomeCopyElement) {
+    return;
+  }
+
+  welcomeTitleElement.textContent = randomFrom(WELCOME_TITLES);
+  setWelcomeCopyText(randomFrom(WELCOME_LINES));
+  scheduleWelcomeScares();
+}
+
+function dismissWelcomeScreen() {
+  if (!welcomeScreenElement || welcomeClosing || welcomeScreenElement.classList.contains("is-hidden")) {
+    stopWelcomeAudio();
+    return;
+  }
+
+  clearWelcomeTimers();
+  stopWelcomeAudio();
+  flashWelcomeOverlay();
+  flashWelcomeOmen(true);
+  warnWelcomeTitle();
+  typeWelcomeWhisper(`GOODBYE ${getWelcomeRoomCode()}`);
+  updatePlanchette(BOARD_TARGETS.GOODBYE);
+  moveWelcomePlanchetteShadow({
+    x: Math.max(8, Math.min(92, BOARD_TARGETS.GOODBYE.x - 11)),
+    y: Math.max(14, Math.min(84, BOARD_TARGETS.GOODBYE.y - 8))
+  });
+  boardElement.classList.add("is-welcome-moving");
+  welcomeScreenElement.classList.add("is-jump");
+  welcomeClosing = true;
+
+  queueWelcomeTimer(() => {
+    boardElement.classList.remove("is-welcome-moving");
+    welcomeScreenElement.classList.add("is-hidden");
+    welcomeScreenElement.classList.remove("is-jump");
+    updatePlanchette({ x: 50, y: 72 });
+    clearWelcomePlanchetteShadow();
+  }, 420);
 }
 
 function isIosDevice() {
@@ -186,6 +539,280 @@ async function registerServiceWorker() {
   } catch (_error) {
     setStatus("Offline install features could not be fully registered in this browser.", true);
   }
+}
+
+async function startWelcomeAudio() {
+  if (welcomeAudioState.started) {
+    return;
+  }
+
+  const ready = await ensureAudio();
+
+  if (!ready || !audioContext) {
+    return;
+  }
+
+  const gain = audioContext.createGain();
+  const lowPass = audioContext.createBiquadFilter();
+  const bandPass = audioContext.createBiquadFilter();
+  const noiseSource = audioContext.createBufferSource();
+  const noiseGain = audioContext.createGain();
+  const drone = audioContext.createOscillator();
+  const droneGain = audioContext.createGain();
+  const undertone = audioContext.createOscillator();
+  const undertoneGain = audioContext.createGain();
+  const pulse = audioContext.createOscillator();
+  const pulseGain = audioContext.createGain();
+  const now = audioContext.currentTime;
+
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.connect(audioContext.destination);
+
+  lowPass.type = "lowpass";
+  lowPass.frequency.value = 520;
+  lowPass.Q.value = 0.5;
+  lowPass.connect(gain);
+
+  bandPass.type = "bandpass";
+  bandPass.frequency.value = 720;
+  bandPass.Q.value = 0.9;
+  bandPass.connect(lowPass);
+
+  noiseSource.buffer = noiseBuffer;
+  noiseSource.loop = true;
+  noiseGain.gain.value = 0.026;
+  noiseSource.connect(noiseGain);
+  noiseGain.connect(bandPass);
+
+  drone.type = "triangle";
+  drone.frequency.setValueAtTime(52, now);
+  droneGain.gain.value = 0.038;
+  drone.connect(droneGain);
+  droneGain.connect(lowPass);
+
+  undertone.type = "sine";
+  undertone.frequency.setValueAtTime(39, now);
+  undertoneGain.gain.value = 0.018;
+  undertone.connect(undertoneGain);
+  undertoneGain.connect(lowPass);
+
+  pulse.type = "sine";
+  pulse.frequency.setValueAtTime(92, now);
+  pulseGain.gain.setValueAtTime(0.0001, now);
+  pulseGain.gain.linearRampToValueAtTime(0.016, now + 1.4);
+  pulseGain.gain.linearRampToValueAtTime(0.0001, now + 4.8);
+  pulse.connect(pulseGain);
+  pulseGain.connect(lowPass);
+
+  gain.gain.linearRampToValueAtTime(0.2, now + 1.1);
+
+  noiseSource.start(now);
+  drone.start(now);
+  undertone.start(now);
+  pulse.start(now);
+
+  welcomeAudioState = {
+    started: true,
+    gain,
+    nodes: [noiseSource, drone, undertone, pulse],
+    loopTimer: null
+  };
+
+  scheduleWelcomeMusicLoop(220);
+}
+
+function playWelcomeMusicNote(frequency, startAt, duration, gainScale = 1) {
+  if (!audioContext || !welcomeAudioState.started || !welcomeAudioState.gain) {
+    return;
+  }
+
+  const voice = audioContext.createOscillator();
+  const shadow = audioContext.createOscillator();
+  const noteFilter = audioContext.createBiquadFilter();
+  const voiceGain = audioContext.createGain();
+  const shadowGain = audioContext.createGain();
+  const endAt = startAt + duration;
+
+  noteFilter.type = "lowpass";
+  noteFilter.frequency.setValueAtTime(780, startAt);
+  noteFilter.Q.value = 0.5;
+
+  voice.type = "triangle";
+  voice.frequency.setValueAtTime(frequency, startAt);
+  voice.frequency.linearRampToValueAtTime(Math.max(48, frequency * 0.965), endAt);
+
+  shadow.type = "sine";
+  shadow.frequency.setValueAtTime(frequency * 0.5, startAt);
+  shadow.frequency.linearRampToValueAtTime(Math.max(28, frequency * 0.48), endAt);
+
+  voiceGain.gain.setValueAtTime(0.0001, startAt);
+  voiceGain.gain.linearRampToValueAtTime(0.03 * gainScale, startAt + 0.22);
+  voiceGain.gain.linearRampToValueAtTime(0.018 * gainScale, startAt + (duration * 0.62));
+  voiceGain.gain.exponentialRampToValueAtTime(0.0001, endAt);
+
+  shadowGain.gain.setValueAtTime(0.0001, startAt);
+  shadowGain.gain.linearRampToValueAtTime(0.02 * gainScale, startAt + 0.18);
+  shadowGain.gain.exponentialRampToValueAtTime(0.0001, endAt);
+
+  voice.connect(voiceGain);
+  shadow.connect(shadowGain);
+  voiceGain.connect(noteFilter);
+  shadowGain.connect(noteFilter);
+  noteFilter.connect(welcomeAudioState.gain);
+
+  voice.start(startAt);
+  shadow.start(startAt);
+  voice.stop(endAt + 0.08);
+  shadow.stop(endAt + 0.08);
+}
+
+function scheduleWelcomeMusicLoop(delayMs = 0) {
+  if (!audioContext || !welcomeAudioState.started || !welcomeAudioState.gain) {
+    return;
+  }
+
+  if (welcomeAudioState.loopTimer) {
+    window.clearTimeout(welcomeAudioState.loopTimer);
+    welcomeAudioState.loopTimer = null;
+  }
+
+  const phrases = [
+    [146.83, 174.61, 164.81, 130.81],
+    [146.83, 146.83, 196.0, 174.61],
+    [130.81, 164.81, 174.61, 146.83],
+    [155.56, 185.0, 174.61, 138.59]
+  ];
+
+  const startPhrase = () => {
+    if (!audioContext || !welcomeAudioState.started || !welcomeAudioState.gain) {
+      return;
+    }
+
+    const phrase = randomFrom(phrases);
+    const now = audioContext.currentTime + 0.05;
+
+    phrase.forEach((frequency, index) => {
+      const startAt = now + (index * 1.08);
+      const duration = index === phrase.length - 1 ? 1.7 : 1.24;
+      const gainScale = index === 0 ? 1.2 : 1;
+
+      playWelcomeMusicNote(frequency, startAt, duration, gainScale);
+    });
+
+    if (Math.random() > 0.58) {
+      window.setTimeout(() => {
+        if (welcomeAudioState.started && !welcomeClosing) {
+          playWelcomeWhisperPulse();
+        }
+      }, 900);
+    }
+
+    welcomeAudioState.loopTimer = window.setTimeout(() => {
+      startPhrase();
+    }, 4700);
+  };
+
+  welcomeAudioState.loopTimer = window.setTimeout(() => {
+    startPhrase();
+  }, delayMs);
+}
+
+function playWelcomeBassHit(intensity = 1) {
+  if (!audioContext || !welcomeAudioState.started || !welcomeAudioState.gain) {
+    return;
+  }
+
+  const now = audioContext.currentTime;
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+
+  oscillator.type = "sine";
+  oscillator.frequency.setValueAtTime(58 * intensity, now);
+  oscillator.frequency.exponentialRampToValueAtTime(34, now + 0.36);
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.08, now + 0.03);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.42);
+
+  oscillator.connect(gain);
+  gain.connect(welcomeAudioState.gain);
+  oscillator.start(now);
+  oscillator.stop(now + 0.44);
+}
+
+function playWelcomeWhisperPulse() {
+  if (!audioContext || !welcomeAudioState.started || !welcomeAudioState.gain || !noiseBuffer) {
+    return;
+  }
+
+  const now = audioContext.currentTime;
+  const source = audioContext.createBufferSource();
+  const bandPass = audioContext.createBiquadFilter();
+  const pulseGain = audioContext.createGain();
+  const oscillator = audioContext.createOscillator();
+  const oscillatorGain = audioContext.createGain();
+
+  source.buffer = noiseBuffer;
+  bandPass.type = "bandpass";
+  bandPass.frequency.value = randomBetween(620, 980);
+  bandPass.Q.value = 1.4;
+  pulseGain.gain.setValueAtTime(0.0001, now);
+  pulseGain.gain.exponentialRampToValueAtTime(0.013, now + 0.03);
+  pulseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.42);
+
+  oscillator.type = Math.random() > 0.5 ? "sine" : "triangle";
+  oscillator.frequency.setValueAtTime(randomBetween(180, 260), now);
+  oscillator.frequency.linearRampToValueAtTime(randomBetween(120, 170), now + 0.4);
+  oscillatorGain.gain.setValueAtTime(0.0001, now);
+  oscillatorGain.gain.exponentialRampToValueAtTime(0.008, now + 0.04);
+  oscillatorGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+
+  source.connect(bandPass);
+  bandPass.connect(pulseGain);
+  pulseGain.connect(welcomeAudioState.gain);
+  oscillator.connect(oscillatorGain);
+  oscillatorGain.connect(welcomeAudioState.gain);
+
+  source.start(now);
+  source.stop(now + 0.44);
+  oscillator.start(now);
+  oscillator.stop(now + 0.44);
+}
+
+function stopWelcomeAudio() {
+  if (!audioContext || !welcomeAudioState.started || !welcomeAudioState.gain) {
+    return;
+  }
+
+  const now = audioContext.currentTime;
+  const gain = welcomeAudioState.gain;
+
+  gain.gain.cancelScheduledValues(now);
+  gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.0001), now);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+
+  if (welcomeAudioState.loopTimer) {
+    window.clearTimeout(welcomeAudioState.loopTimer);
+    welcomeAudioState.loopTimer = null;
+  }
+
+  window.setTimeout(() => {
+    welcomeAudioState.nodes.forEach((node) => {
+      try {
+        node.stop?.();
+      } catch (_error) {
+        // Ignore nodes that were already stopped.
+      }
+      node.disconnect?.();
+    });
+
+    gain.disconnect?.();
+    welcomeAudioState = {
+      started: false,
+      gain: null,
+      nodes: [],
+      loopTimer: null
+    };
+  }, 520);
 }
 
 function normalizeRoomId(value) {
@@ -619,6 +1246,14 @@ enterSiteButton.addEventListener("click", () => {
   dismissWelcomeScreen();
 });
 
+welcomeScreenElement.addEventListener("pointerdown", () => {
+  startWelcomeAudio();
+}, { once: true });
+
+welcomeScreenElement.addEventListener("pointermove", () => {
+  startWelcomeAudio();
+}, { once: true });
+
 roomInput.addEventListener("input", () => {
   const roomId = normalizeRoomId(roomInput.value);
   roomInput.value = roomId;
@@ -741,6 +1376,15 @@ window.addEventListener("appinstalled", () => {
 });
 
 window.addEventListener("keydown", (event) => {
+  if (!welcomeScreenElement.classList.contains("is-hidden")) {
+    startWelcomeAudio();
+  }
+
+  if (event.key === "Enter" && !welcomeScreenElement.classList.contains("is-hidden")) {
+    dismissWelcomeScreen();
+    return;
+  }
+
   if (event.key === "Escape") {
     dismissWelcomeScreen();
   }
@@ -751,6 +1395,7 @@ const roomFromUrl = normalizeRoomId(new URLSearchParams(window.location.search).
 nameInput.value = getSavedName();
 roomInput.value = roomFromUrl || generateRoomCode();
 desiredRoomId = roomFromUrl;
+seedWelcomeScreen();
 updateInviteLink(roomInput.value);
 updateSpiritUi(currentSpiritState);
 updateInstallUi();

@@ -14,7 +14,7 @@
     "socket.io",
     "game"
   ],
-  "author": "",
+  "author": "Piraticy",
   "license": "MIT",
   "dependencies": {
     "express": "^4.21.2",

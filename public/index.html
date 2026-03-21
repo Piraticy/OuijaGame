@@ -22,9 +22,31 @@
   </head>
   <body>
     <div id="welcome-screen" class="welcome-screen">
+      <div id="welcome-flash" class="welcome-flash" aria-hidden="true"></div>
+      <div id="welcome-strobe" class="welcome-strobe" aria-hidden="true"></div>
+      <div id="welcome-omen" class="welcome-omen" aria-hidden="true">
+        <div class="omen-face">
+          <span class="omen-eye omen-eye-left"></span>
+          <span class="omen-eye omen-eye-right"></span>
+          <span class="omen-mouth"></span>
+        </div>
+        <div class="omen-sigil">
+          <span class="sigil-ring"></span>
+          <span class="sigil-line sigil-line-a"></span>
+          <span class="sigil-line sigil-line-b"></span>
+          <span class="sigil-line sigil-line-c"></span>
+        </div>
+      </div>
+      <div class="welcome-smoke" aria-hidden="true">
+        <span class="smoke smoke-a"></span>
+        <span class="smoke smoke-b"></span>
+        <span class="smoke smoke-c"></span>
+        <span class="smoke smoke-d"></span>
+      </div>
       <div class="welcome-panel">
         <p class="eyebrow">Do Not Ask Twice</p>
-        <h2 class="welcome-title">It heard you.</h2>
+        <h2 id="welcome-title" class="welcome-title">It heard you.</h2>
+        <p id="welcome-copy" class="welcome-copy">Press enter.</p>
         <button id="enter-site" type="button">Enter</button>
       </div>
     </div>
@@ -102,6 +124,9 @@
       <main class="board-stage">
         <div class="board-wrap">
           <div id="static-burst" class="static-burst" aria-hidden="true"></div>
+          <div id="welcome-planchette-shadow" class="welcome-planchette-shadow" aria-hidden="true">
+            <span class="planchette-window"></span>
+          </div>
           <div class="candle candle-left" aria-hidden="true">
             <span class="candle-glow"></span>
             <span class="candle-flame"></span>
@@ -175,6 +200,11 @@
           <p id="spirit-answer" class="status-value spirit-answer">No reply yet.</p>
         </div>
       </aside>
+    </div>
+
+    <div class="app-meta" aria-label="Game credits and version">
+      <span>Ouija Online v1.0.0</span>
+      <span>Created by Piraticy</span>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
