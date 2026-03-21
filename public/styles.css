@@ -1172,7 +1172,7 @@ body[data-haunt-level="Attached"] #invite-link {
   grid-template-columns: repeat(13, minmax(0, 1fr));
   align-items: center;
   justify-items: center;
-  width: min(100%, 80%);
+  width: min(100%, 86%);
   margin-inline: auto;
   margin-top: clamp(38px, 7vw, 64px);
   font-size: clamp(1rem, 1.7vw, 1.5rem);
@@ -1187,7 +1187,7 @@ body[data-haunt-level="Attached"] #invite-link {
   grid-template-columns: repeat(10, minmax(0, 1fr));
   align-items: center;
   justify-items: center;
-  width: min(100%, 58%);
+  width: min(100%, 66%);
   margin-inline: auto;
   margin-top: clamp(26px, 6vw, 52px);
   font-size: clamp(1.05rem, 1.7vw, 1.5rem);
