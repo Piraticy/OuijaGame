@@ -1,4 +1,4 @@
-const CACHE_NAME = "ouija-online-v1";
+const CACHE_NAME = "ouija-online-v2";
 const APP_SHELL = [
   "/",
   "/styles.css",
