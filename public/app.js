@@ -1,47 +1,32 @@
 const socket = io();
 
-const BOARD_TARGETS = {
-  YES: { x: 17, y: 11 },
-  NO: { x: 83, y: 11 },
-  HELLO: { x: 25, y: 86 },
-  GOODBYE: { x: 75, y: 86 },
-  A: { x: 10, y: 32 },
-  B: { x: 16, y: 31 },
-  C: { x: 22, y: 30 },
-  D: { x: 28, y: 29 },
-  E: { x: 34, y: 28 },
-  F: { x: 40, y: 27 },
-  G: { x: 46, y: 26 },
-  H: { x: 52, y: 26 },
-  I: { x: 58, y: 27 },
-  J: { x: 64, y: 28 },
-  K: { x: 70, y: 29 },
-  L: { x: 76, y: 30 },
-  M: { x: 82, y: 31 },
-  N: { x: 12, y: 42 },
-  O: { x: 18, y: 41 },
-  P: { x: 24, y: 40 },
-  Q: { x: 30, y: 39 },
-  R: { x: 36, y: 38 },
-  S: { x: 42, y: 37 },
-  T: { x: 48, y: 36 },
-  U: { x: 54, y: 36 },
-  V: { x: 60, y: 37 },
-  W: { x: 66, y: 38 },
-  X: { x: 72, y: 39 },
-  Y: { x: 78, y: 40 },
-  Z: { x: 84, y: 41 },
-  1: { x: 20, y: 58 },
-  2: { x: 27, y: 57 },
-  3: { x: 34, y: 56 },
-  4: { x: 41, y: 55 },
-  5: { x: 48, y: 54 },
-  6: { x: 55, y: 55 },
-  7: { x: 62, y: 56 },
-  8: { x: 69, y: 57 },
-  9: { x: 76, y: 58 },
-  0: { x: 83, y: 59 }
-};
+function createBoardTargets() {
+  const targets = {
+    YES: { x: 16, y: 10 },
+    NO: { x: 84, y: 10 },
+    HELLO: { x: 22, y: 86 },
+    GOODBYE: { x: 78, y: 86 }
+  };
+
+  const addLinearRow = (tokens, startX, endX, y) => {
+    const step = (endX - startX) / Math.max(tokens.length - 1, 1);
+
+    tokens.forEach((token, index) => {
+      targets[token] = {
+        x: Number((startX + (step * index)).toFixed(2)),
+        y
+      };
+    });
+  };
+
+  addLinearRow("ABCDEFGHIJKLM".split(""), 11.5, 88.5, 33);
+  addLinearRow("NOPQRSTUVWXYZ".split(""), 11.5, 88.5, 43);
+  addLinearRow("1234567890".split(""), 22.5, 77.5, 60);
+
+  return targets;
+}
+
+const BOARD_TARGETS = createBoardTargets();
 
 const joinForm = document.getElementById("join-form");
 const questionForm = document.getElementById("question-form");
@@ -189,7 +174,7 @@ let currentRoomId = "";
 let desiredRoomId = "";
 let isDragging = false;
 let isSpiritMoving = false;
-let latestCursor = { x: 50, y: 72 };
+let latestCursor = { x: 50, y: 70 };
 let currentSpiritState = {
   enabled: true,
   active: false,
@@ -618,7 +603,7 @@ function fakeBoardMovement() {
   queueWelcomeTimer(() => {
     boardElement.classList.remove("is-welcome-moving");
     welcomeScreenElement.classList.remove("is-board-omen");
-    updatePlanchette({ x: 50, y: 72 });
+    updatePlanchette({ x: 50, y: 70 });
     clearWelcomePlanchetteShadow();
   }, 360);
 }
@@ -763,7 +748,7 @@ function dismissWelcomeScreen() {
     welcomeScreenElement.classList.add("is-hidden");
     welcomeScreenElement.classList.remove("is-jump");
     welcomeScreenElement.classList.remove("has-shadow-figure");
-    updatePlanchette({ x: 50, y: 72 });
+    updatePlanchette({ x: 50, y: 70 });
     clearWelcomePlanchetteShadow();
   }, 420);
 }
@@ -1363,8 +1348,8 @@ function renderHistory(entries) {
 
 function updatePlanchette(cursor) {
   const safeCursor = {
-    x: Math.max(15, Math.min(85, Number(cursor?.x ?? RESTING_CURSOR.x))),
-    y: Math.max(14, Math.min(88, Number(cursor?.y ?? RESTING_CURSOR.y)))
+    x: Math.max(10, Math.min(90, Number(cursor?.x ?? RESTING_CURSOR.x))),
+    y: Math.max(10, Math.min(88, Number(cursor?.y ?? RESTING_CURSOR.y)))
   };
 
   latestCursor = safeCursor;
@@ -1414,8 +1399,8 @@ function toBoardPercentages(clientX, clientY) {
   const y = ((clientY - rect.top) / rect.height) * 100;
 
   return {
-    x: Math.max(4, Math.min(96, x)),
-    y: Math.max(8, Math.min(92, y))
+    x: Math.max(10, Math.min(90, x)),
+    y: Math.max(10, Math.min(88, y))
   };
 }
 
@@ -1575,6 +1560,7 @@ async function toggleSound() {
 }
 
 async function animateSpiritSequence({
+  mode = "answer",
   answer,
   sequence,
   whisper,
@@ -1586,8 +1572,12 @@ async function animateSpiritSequence({
   const runId = ++spiritAnimationRun;
   isSpiritMoving = true;
   setHauntingVisuals(true);
-  spiritStatusElement.textContent = `${currentSpiritState.name} is spelling out an answer...`;
-  setWhisperLine(whisper || "A hush moves across the board.");
+  spiritStatusElement.textContent = mode === "prompt"
+    ? `${currentSpiritState.name} is asking from the dark...`
+    : `${currentSpiritState.name} is spelling out an answer...`;
+  setWhisperLine(
+    whisper || (mode === "prompt" ? "The board moves without your hands." : "A hush moves across the board.")
+  );
   triggerStaticBurst(omenLevel);
   playWhisperBurst(omenLevel);
 
@@ -1613,7 +1603,9 @@ async function animateSpiritSequence({
     return;
   }
 
-  questionDisplay.textContent = answer;
+  if (mode === "prompt") {
+    questionDisplay.textContent = answer;
+  }
   await wait(settleMs);
 
   if (runId !== spiritAnimationRun) {
@@ -1756,6 +1748,7 @@ planchetteElement.addEventListener("pointerdown", (event) => {
   }
 
   isDragging = true;
+  planchetteElement.classList.add("is-dragging");
   planchetteElement.setPointerCapture(event.pointerId);
   emitCursorFromPointer(event);
 });
@@ -1770,11 +1763,13 @@ planchetteElement.addEventListener("pointermove", (event) => {
 
 planchetteElement.addEventListener("pointerup", (event) => {
   isDragging = false;
+  planchetteElement.classList.remove("is-dragging");
   planchetteElement.releasePointerCapture(event.pointerId);
 });
 
 planchetteElement.addEventListener("pointercancel", (event) => {
   isDragging = false;
+  planchetteElement.classList.remove("is-dragging");
   planchetteElement.releasePointerCapture(event.pointerId);
 });
 

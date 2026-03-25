@@ -84,61 +84,73 @@ const upsertWordStmt = db.prepare(`
     updated_at = excluded.updated_at
 `);
 
-const BOARD_TARGETS = {
-  YES: { x: 17, y: 11 },
-  NO: { x: 83, y: 11 },
-  HELLO: { x: 25, y: 86 },
-  GOODBYE: { x: 75, y: 86 },
-  A: { x: 10, y: 32 },
-  B: { x: 16, y: 31 },
-  C: { x: 22, y: 30 },
-  D: { x: 28, y: 29 },
-  E: { x: 34, y: 28 },
-  F: { x: 40, y: 27 },
-  G: { x: 46, y: 26 },
-  H: { x: 52, y: 26 },
-  I: { x: 58, y: 27 },
-  J: { x: 64, y: 28 },
-  K: { x: 70, y: 29 },
-  L: { x: 76, y: 30 },
-  M: { x: 82, y: 31 },
-  N: { x: 12, y: 42 },
-  O: { x: 18, y: 41 },
-  P: { x: 24, y: 40 },
-  Q: { x: 30, y: 39 },
-  R: { x: 36, y: 38 },
-  S: { x: 42, y: 37 },
-  T: { x: 48, y: 36 },
-  U: { x: 54, y: 36 },
-  V: { x: 60, y: 37 },
-  W: { x: 66, y: 38 },
-  X: { x: 72, y: 39 },
-  Y: { x: 78, y: 40 },
-  Z: { x: 84, y: 41 },
-  1: { x: 20, y: 58 },
-  2: { x: 27, y: 57 },
-  3: { x: 34, y: 56 },
-  4: { x: 41, y: 55 },
-  5: { x: 48, y: 54 },
-  6: { x: 55, y: 55 },
-  7: { x: 62, y: 56 },
-  8: { x: 69, y: 57 },
-  9: { x: 76, y: 58 },
-  0: { x: 83, y: 59 }
-};
+function createBoardTargets() {
+  const targets = {
+    YES: { x: 16, y: 10 },
+    NO: { x: 84, y: 10 },
+    HELLO: { x: 22, y: 86 },
+    GOODBYE: { x: 78, y: 86 }
+  };
+
+  const addLinearRow = (tokens, startX, endX, y) => {
+    const step = (endX - startX) / Math.max(tokens.length - 1, 1);
+
+    tokens.forEach((token, index) => {
+      targets[token] = {
+        x: Number((startX + (step * index)).toFixed(2)),
+        y
+      };
+    });
+  };
+
+  addLinearRow("ABCDEFGHIJKLM".split(""), 11.5, 88.5, 33);
+  addLinearRow("NOPQRSTUVWXYZ".split(""), 11.5, 88.5, 43);
+  addLinearRow("1234567890".split(""), 22.5, 77.5, 60);
+
+  return targets;
+}
+
+const BOARD_TARGETS = createBoardTargets();
 const SPIRIT_REST_CURSOR = { x: 50, y: 70 };
 
 const RESPONSE_LIBRARY = {
-  certainty: ["YES", "NO", "NOT YET", "LATER"],
+  certainty: ["YES", "NO", "YES", "NO", "NOT YET"],
   presence: ["I AM HERE", "ALWAYS", "IN SHADOW"],
   identity: ["THE VEIL", "NO NAME", "ONLY ECHOES"],
   intent: ["TO BE HEARD", "TO REMEMBER", "TO WATCH"],
   hunger: ["ALWAYS", "I HUNGER", "FOR LIGHT", "FOR NAMES"],
-  feeling: ["COLD MEMORY", "QUIET DREAD", "HEAVY AIR"],
+  feeling: ["COLD", "RESTLESS", "HEAVY", "WAKEFUL", "HUNGRY", "LONELY"],
   warning: ["STAY IN LIGHT", "KEEP QUIET", "DO NOT RUSH"],
   time: ["AT MIDNIGHT", "WHEN RAIN FALLS", "AFTER THE BELL"],
   closing: ["GOODBYE", "CLOSE THE BOARD", "ENOUGH FOR NOW"],
   default: ["THE VEIL THINS", "ONLY STATIC", "ASK AGAIN", "QUIET NOW"]
+};
+
+const IDLE_PROMPTS = {
+  watchful: [
+    "ARE YOU STILL HERE",
+    "WHY ARE YOU QUIET",
+    "WHO SITS WITH YOU",
+    "DO YOU HEAR ME"
+  ],
+  hostile: [
+    "WHY DID YOU CALL ME",
+    "WHO IS IN THE ROOM",
+    "WHY DID YOU COME BACK",
+    "ARE YOU AFRAID"
+  ],
+  mournful: [
+    "DO YOU REMEMBER ME",
+    "WILL YOU STAY",
+    "WHO LEFT THE DOOR OPEN",
+    "CAN YOU HEAR THE HALL"
+  ],
+  hungry: [
+    "ARE YOU STILL LISTENING",
+    "WHO FEEDS THE DARK",
+    "WHY ARE YOU ALONE",
+    "WILL YOU ASK AGAIN"
+  ]
 };
 
 const SPIRIT_MOODS = {
@@ -243,6 +255,11 @@ const QUESTION_STOP_WORDS = new Set([
   "that",
   "the",
   "there",
+  "now",
+  "feel",
+  "feeling",
+  "single",
+  "alone",
   "they",
   "this",
   "to",
@@ -281,6 +298,7 @@ function createRoomState(roomId) {
       mood: haunting.mood,
       memory: []
     },
+    idleTimer: null,
     timers: new Set()
   };
 }
@@ -373,15 +391,42 @@ function trimHistory(room) {
 function clearRoomTimers(room) {
   room.timers.forEach((timer) => clearTimeout(timer));
   room.timers.clear();
+  room.idleTimer = null;
 }
 
 function addRoomTimer(room, callback, delay) {
   const timer = setTimeout(() => {
     room.timers.delete(timer);
+    if (room.idleTimer === timer) {
+      room.idleTimer = null;
+    }
     callback();
   }, delay);
 
   room.timers.add(timer);
+  return timer;
+}
+
+function clearIdleTimer(room) {
+  if (!room?.idleTimer) {
+    return;
+  }
+
+  clearTimeout(room.idleTimer);
+  room.timers.delete(room.idleTimer);
+  room.idleTimer = null;
+}
+
+function scheduleIdleHaunt(room) {
+  clearIdleTimer(room);
+
+  if (!room || room.players.size === 0 || room.spirit.active) {
+    return;
+  }
+
+  room.idleTimer = addRoomTimer(room, () => {
+    triggerIdleHaunt(room);
+  }, 38000 + Math.floor(Math.random() * 18000));
 }
 
 function broadcastRoom(room) {
@@ -590,6 +635,7 @@ function buildPhrase(...parts) {
 
 function extractQuestionProfile(question) {
   const lowerQuestion = String(question || "").toLowerCase();
+  const trimmedQuestion = lowerQuestion.trim();
   const words = String(question || "")
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, " ")
@@ -607,6 +653,7 @@ function extractQuestionProfile(question) {
     words,
     primaryWord,
     secondaryWord,
+    looksBinary: /^(are|is|am|do|does|did|will|would|can|could|should|have|has)\b/.test(trimmedQuestion),
     asksDirectPresence: /\b(is anyone there|are you there|are you here|is anybody there|can you hear me|do you hear me)\b/.test(
       lowerQuestion
     ),
@@ -621,6 +668,12 @@ function extractQuestionProfile(question) {
       lowerQuestion
     ),
     asksLocation: /\b(where are you|where do you hide|where should i look)\b/.test(lowerQuestion),
+    asksFeeling: /\b(how do you feel|how you feel|how are you feeling|how are you|what do you feel|are you cold|are you lonely|are you sad|are you angry|are you tired)\b/.test(
+      lowerQuestion
+    ),
+    asksRelationship: /\b(are you single|are you alone|are you married|are you taken|do you belong to someone)\b/.test(
+      lowerQuestion
+    ),
     asksTemper: /\b(are you evil|are you bad|are you friendly|are you good)\b/.test(lowerQuestion),
     asksHunger: /\b(are you hungry|are you starving|do you hunger|what are you hungry for|who are you hungry for|do you want to eat|do you want to feed)\b/.test(
       lowerQuestion
@@ -637,6 +690,45 @@ function extractQuestionProfile(question) {
     asksIdentity: /\bwho|name|what are you\b/.test(lowerQuestion),
     asksPresence: /\bare you|is someone|here|with me|in my\b/.test(lowerQuestion)
   };
+}
+
+function createBinaryFallback() {
+  return chooseWeighted([
+    ["YES", 8],
+    ["NO", 8],
+    ["NOT YET", 2]
+  ]);
+}
+
+function createRelationshipResponse(room) {
+  return chooseWeighted([
+    ["NO", 6],
+    ["YES", 5],
+    ["ALONE", 4],
+    ["NOT ALONE", 3],
+    [chooseMoodLine(room, "default"), 1]
+  ]);
+}
+
+function createFeelingResponse(room, profile, roomWord) {
+  const roomReply = createRoomWordResponse(roomWord, "location");
+
+  if (roomReply && Math.random() > 0.45) {
+    return chooseWeighted([
+      ["COLD", 5],
+      ["HEAVY", 4],
+      ["RESTLESS", 4],
+      [buildPhrase("COLD", roomWord), 3],
+      [roomReply, 2]
+    ]);
+  }
+
+  return chooseWeighted([
+    [chooseRandom(RESPONSE_LIBRARY.feeling), 6],
+    [chooseMoodLine(room, "default"), 3],
+    ["I FEEL YOU", 2],
+    ["THE AIR IS COLD", 2]
+  ]);
 }
 
 function createSubjectResponse(profile) {
@@ -733,6 +825,7 @@ function createLocationResponse(room, profile, roomWord) {
   if (roomReply) {
     return chooseWeighted([
       [roomReply, 8],
+      ["WITH YOU", 3],
       ["BEHIND YOU", 3],
       ["IN THE WALLS", 2]
     ]);
@@ -748,11 +841,11 @@ function createLocationResponse(room, profile, roomWord) {
   }
 
   return chooseWeighted([
-    ["BEHIND YOU", 5],
-    ["IN THE WALLS", 3],
-    ["UNDER THE BED", 2],
-    ["IN THE MIRROR", 2],
-    ["BENEATH YOU", 2]
+    ["WITH YOU", 6],
+    ["IN THE ROOM", 5],
+    ["BEHIND YOU", 4],
+    ["BY THE BOARD", 3],
+    ["IN THE WALLS", 2]
   ]);
 }
 
@@ -825,6 +918,37 @@ function createHungerResponse(room, askedBy, roomWord) {
   }
 
   return chooseWeighted(weightedAnswers);
+}
+
+function createIdlePrompt(room) {
+  const haunting = getHaunting(room.roomId);
+  const rememberedWord = getRememberedRoomWord(room);
+  const lastName = haunting.lastQuestioners[haunting.lastQuestioners.length - 1] || "";
+  const promptPool = [...(IDLE_PROMPTS[room.spirit.mood] || IDLE_PROMPTS.watchful)];
+
+  if (rememberedWord) {
+    promptPool.push(
+      buildPhrase("WHO IS AT THE", rememberedWord),
+      buildPhrase("WHY IS THE", rememberedWord, "OPEN"),
+      buildPhrase("DO YOU HEAR THE", rememberedWord)
+    );
+  }
+
+  if (lastName && lastName !== "Guest") {
+    promptPool.push(
+      buildPhrase("WHY DID YOU RETURN", lastName),
+      buildPhrase("ARE YOU STILL THERE", lastName),
+      buildPhrase("DO YOU REMEMBER ME", lastName)
+    );
+  }
+
+  const text = chooseRandom(promptPool).replace(/\s+/g, " ").trim();
+  const sequence = tokenizeAnswer(text).slice(0, 18);
+
+  return {
+    text,
+    sequence: sequence.length ? sequence : tokenizeAnswer("ARE YOU THERE")
+  };
 }
 
 function createSpiritWhisper(room, askedBy, profile, roomWord) {
@@ -999,6 +1123,8 @@ function createSpiritResponse(room, askedBy, question) {
     answer = memoryAnswer;
   } else if (profile.asksDirectPresence) {
     answer = createNamedPresenceResponse(room, askedBy) || createPresenceResponse(room, profile, roomWord);
+  } else if (profile.asksRelationship) {
+    answer = createRelationshipResponse(room);
   } else if (profile.asksName) {
     answer = createIdentityResponse(room);
   } else if (profile.asksAge) {
@@ -1011,6 +1137,8 @@ function createSpiritResponse(room, askedBy, question) {
     ]);
   } else if (profile.asksHunger) {
     answer = createHungerResponse(room, askedBy, roomWord);
+  } else if (profile.asksFeeling) {
+    answer = createFeelingResponse(room, profile, roomWord);
   } else if (profile.asksIntent) {
     answer = createRememberedWordResponse(room, askedBy, "intent", roomWord) || createIntentResponse(room, profile, roomWord);
   } else if (profile.asksLocation) {
@@ -1041,8 +1169,8 @@ function createSpiritResponse(room, askedBy, question) {
             buildPhrase("DO NOT WAIT")
           ])
         : chooseRandom(RESPONSE_LIBRARY.warning));
-  } else if (/\b(are|is|do|did|will|can|should)\b/.test(value)) {
-    answer = chooseRandom(RESPONSE_LIBRARY.certainty);
+  } else if (profile.looksBinary) {
+    answer = createBinaryFallback();
   } else if (/\bwhy\b/.test(value)) {
     answer = profile.primaryWord
       ? chooseRandom([
@@ -1052,7 +1180,7 @@ function createSpiritResponse(room, askedBy, question) {
         ])
       : chooseRandom(RESPONSE_LIBRARY.intent);
   } else if (/\bhow\b|\bfeel\b/.test(value)) {
-    answer = chooseRandom(RESPONSE_LIBRARY.feeling);
+    answer = createFeelingResponse(room, profile, roomWord);
   } else if (/\bwhere\b/.test(value)) {
     answer = profile.primaryWord
       ? chooseWeighted([
@@ -1077,7 +1205,7 @@ function createSpiritResponse(room, askedBy, question) {
   } else if (/\bdeath\b|\bdie\b|\bdead\b/.test(value)) {
     answer = chooseRandom(["ONLY ECHOES", "NOT TONIGHT", "ASK NO MORE"]);
   } else {
-    answer = createSubjectResponse(profile) || chooseRandom(RESPONSE_LIBRARY.default);
+    answer = createSubjectResponse(profile) || createBinaryFallback();
   }
 
   const tokens = tokenizeAnswer(answer);
@@ -1102,6 +1230,42 @@ function createSpiritResponse(room, askedBy, question) {
     settleMs: 800 + Math.floor(Math.random() * 500),
     omenLevel: roomWord ? 3 : profile.primaryWord ? 2 : 1
   };
+}
+
+function triggerIdleHaunt(room) {
+  if (!room || room.players.size === 0 || room.spirit.active) {
+    return;
+  }
+
+  const prompt = createIdlePrompt(room);
+  const stepMs = 360 + Math.floor(Math.random() * 120);
+  const settleMs = 760 + Math.floor(Math.random() * 260);
+
+  room.question = `${prompt.text}?`;
+  room.spirit.active = true;
+  room.history.push(`${room.spirit.name} asked: ${room.question}`);
+  trimHistory(room);
+  broadcastRoom(room);
+
+  addRoomTimer(room, () => {
+    io.to(room.roomId).emit("spirit:sequence", {
+      mode: "prompt",
+      answer: room.question,
+      sequence: prompt.sequence,
+      whisper: "The Veil breaks the silence.",
+      stepMs,
+      settleMs,
+      omenLevel: 3,
+      restingCursor: SPIRIT_REST_CURSOR
+    });
+  }, 700);
+
+  addRoomTimer(room, () => {
+    room.cursor = SPIRIT_REST_CURSOR;
+    room.spirit.active = false;
+    broadcastRoom(room);
+    scheduleIdleHaunt(room);
+  }, 700 + (prompt.sequence.length * stepMs) + settleMs);
 }
 
 function beginSpiritSequence(room, askedBy, question) {
@@ -1135,6 +1299,7 @@ function beginSpiritSequence(room, askedBy, question) {
     room.history.push(`${room.spirit.name} answered: ${response.answer}`);
     trimHistory(room);
     broadcastRoom(room);
+    scheduleIdleHaunt(room);
   }, 900 + (response.sequence.length * response.stepMs) + response.settleMs);
 }
 
@@ -1187,6 +1352,7 @@ io.on("connection", (socket) => {
 
     socket.emit("room:joined", getPublicState(room));
     broadcastRoom(room);
+    scheduleIdleHaunt(room);
   });
 
   socket.on("room:question", ({ question }) => {
@@ -1208,6 +1374,7 @@ io.on("connection", (socket) => {
     trimHistory(room);
     broadcastRoom(room);
 
+    clearIdleTimer(room);
     beginSpiritSequence(room, player?.name || "Someone", safeQuestion);
   });
 
@@ -1234,8 +1401,8 @@ io.on("connection", (socket) => {
     }
 
     room.cursor = {
-      x: clamp(Number(x) || 0, 4, 96),
-      y: clamp(Number(y) || 0, 8, 92)
+      x: clamp(Number(x) || 0, 10, 90),
+      y: clamp(Number(y) || 0, 10, 88)
     };
 
     socket.to(room.roomId).emit("cursor:update", room.cursor);
@@ -1281,6 +1448,7 @@ io.on("connection", (socket) => {
     }
 
     broadcastRoom(room);
+    scheduleIdleHaunt(room);
   });
 });
 
