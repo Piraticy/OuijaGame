@@ -2,26 +2,26 @@ const socket = io();
 
 function createBoardTargets() {
   const targets = {
-    YES: { x: 16, y: 10 },
-    NO: { x: 84, y: 10 },
-    HELLO: { x: 22, y: 86 },
-    GOODBYE: { x: 78, y: 86 }
+    YES: { x: 14, y: 13 },
+    NO: { x: 86, y: 13 },
+    HELLO: { x: 18, y: 85 },
+    GOODBYE: { x: 82, y: 85 }
   };
 
-  const addLinearRow = (tokens, startX, endX, y) => {
+  const addRow = (tokens, startX, endX, yValues) => {
     const step = (endX - startX) / Math.max(tokens.length - 1, 1);
 
     tokens.forEach((token, index) => {
       targets[token] = {
         x: Number((startX + (step * index)).toFixed(2)),
-        y
+        y: Array.isArray(yValues) ? yValues[index] : yValues
       };
     });
   };
 
-  addLinearRow("ABCDEFGHIJKLM".split(""), 11.5, 88.5, 33);
-  addLinearRow("NOPQRSTUVWXYZ".split(""), 11.5, 88.5, 43);
-  addLinearRow("1234567890".split(""), 22.5, 77.5, 60);
+  addRow("ABCDEFGHIJKLM".split(""), 12, 88, [34, 32.2, 30.8, 29.6, 28.6, 27.8, 27.4, 27.8, 28.6, 29.6, 30.8, 32.2, 34]);
+  addRow("NOPQRSTUVWXYZ".split(""), 12, 88, [45, 46.2, 47.3, 48.2, 49, 49.4, 49.6, 49.4, 49, 48.2, 47.3, 46.2, 45]);
+  addRow("1234567890".split(""), 24, 76, [62.2, 61.3, 60.6, 60.1, 59.8, 59.8, 60.1, 60.6, 61.3, 62.2]);
 
   return targets;
 }

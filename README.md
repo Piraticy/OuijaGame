@@ -4,9 +4,16 @@ A small multiplayer Ouija-style browser game built with Node, Express, and Socke
 
 ## Version
 
-- Current version: `1.0.0`
+- Current version: `2.0.2`
 - Created by `Piraticy`
 - Source: [github.com/Piraticy/OuijaGame](https://github.com/Piraticy/OuijaGame)
+
+## What's New In 2.0.2
+
+- Reworked the main board into a wider vintage talking-board look with a parchment face, crest, and darker classic lettering
+- Redesigned the planchette into a black-and-gold eye style inspired by old spirit board sets
+- Retuned the letter and number target map so planchette movement follows the new spread layout more accurately
+- Updated the in-game version badge to `v2.0.2`
 
 ## Features
 
