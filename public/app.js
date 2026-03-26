@@ -2,10 +2,10 @@ const socket = io();
 
 function createBoardTargets() {
   const targets = {
-    YES: { x: 16, y: 12 },
-    NO: { x: 84, y: 12 },
-    HELLO: { x: 22, y: 88 },
-    GOODBYE: { x: 78, y: 88 }
+    YES: { x: 20, y: 19 },
+    NO: { x: 80, y: 19 },
+    HELLO: { x: 22, y: 84 },
+    GOODBYE: { x: 78, y: 84 }
   };
 
   const addRow = (tokens, startX, endX, yValues) => {
@@ -19,9 +19,9 @@ function createBoardTargets() {
     });
   };
 
-  addRow("ABCDEFGHIJKLM".split(""), 18, 82, [44, 41.6, 39.5, 37.8, 36.4, 35.4, 35, 35.4, 36.4, 37.8, 39.5, 41.6, 44]);
-  addRow("NOPQRSTUVWXYZ".split(""), 18, 82, [58, 59.4, 60.8, 61.9, 62.7, 63.2, 63.4, 63.2, 62.7, 61.9, 60.8, 59.4, 58]);
-  addRow("1234567890".split(""), 28, 72, [77.5, 76.8, 76.1, 75.6, 75.3, 75.3, 75.6, 76.1, 76.8, 77.5]);
+  addRow("ABCDEFGHIJKLM".split(""), 19, 81, [45, 41.6, 38.9, 36.7, 35.1, 34.2, 33.8, 34.2, 35.1, 36.7, 38.9, 41.6, 45]);
+  addRow("NOPQRSTUVWXYZ".split(""), 19, 81, [57.8, 59.6, 61.2, 62.5, 63.5, 64, 64.2, 64, 63.5, 62.5, 61.2, 59.6, 57.8]);
+  addRow("1234567890".split(""), 31, 69, [75.8, 75.2, 74.7, 74.3, 74, 74, 74.3, 74.7, 75.2, 75.8]);
 
   return targets;
 }
@@ -168,7 +168,7 @@ const SOUND_PROFILES = [
     ]
   }
 ];
-const RESTING_CURSOR = { x: 50, y: 70 };
+const RESTING_CURSOR = { x: 50, y: 72 };
 
 let currentRoomId = "";
 let desiredRoomId = "";
