@@ -2,10 +2,10 @@ const socket = io();
 
 function createBoardTargets() {
   const targets = {
-    YES: { x: 20, y: 19 },
-    NO: { x: 80, y: 19 },
-    HELLO: { x: 22, y: 84 },
-    GOODBYE: { x: 78, y: 84 }
+    YES: { x: 12, y: 20.5 },
+    NO: { x: 88, y: 20.5 },
+    HELLO: { x: 22, y: 92 },
+    GOODBYE: { x: 78, y: 92 }
   };
 
   const addRow = (tokens, startX, endX, yValues) => {
@@ -19,9 +19,9 @@ function createBoardTargets() {
     });
   };
 
-  addRow("ABCDEFGHIJKLM".split(""), 19, 81, [45, 41.6, 38.9, 36.7, 35.1, 34.2, 33.8, 34.2, 35.1, 36.7, 38.9, 41.6, 45]);
-  addRow("NOPQRSTUVWXYZ".split(""), 19, 81, [57.8, 59.6, 61.2, 62.5, 63.5, 64, 64.2, 64, 63.5, 62.5, 61.2, 59.6, 57.8]);
-  addRow("1234567890".split(""), 31, 69, [75.8, 75.2, 74.7, 74.3, 74, 74, 74.3, 74.7, 75.2, 75.8]);
+  addRow("ABCDEFGHIJKLM".split(""), 14, 86, [47.6, 44.9, 42.6, 40.8, 39.4, 38.5, 38.2, 38.5, 39.4, 40.8, 42.6, 44.9, 47.6]);
+  addRow("NOPQRSTUVWXYZ".split(""), 14, 86, [58.6, 60.7, 62.7, 64.2, 65.4, 66.1, 66.4, 66.1, 65.4, 64.2, 62.7, 60.7, 58.6]);
+  addRow("1234567890".split(""), 26, 74, [78.8, 78.3, 77.9, 77.6, 77.4, 77.4, 77.6, 77.9, 78.3, 78.8]);
 
   return targets;
 }
