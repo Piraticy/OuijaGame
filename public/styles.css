@@ -920,20 +920,19 @@ button:hover {
   border-radius: 34px;
   padding: clamp(24px, 3vw, 34px) clamp(18px, 3vw, 34px) clamp(16px, 2.4vw, 24px);
   background:
-    radial-gradient(circle at 22% 20%, rgba(255, 250, 232, 0.28), transparent 22%),
-    radial-gradient(circle at 74% 68%, rgba(93, 53, 25, 0.16), transparent 34%),
-    radial-gradient(circle at 50% 50%, rgba(133, 84, 43, 0.1), transparent 72%),
-    radial-gradient(circle at 32% 44%, rgba(121, 79, 42, 0.14) 0 1.5%, transparent 1.7% 100%),
-    radial-gradient(circle at 64% 36%, rgba(121, 79, 42, 0.12) 0 1.3%, transparent 1.5% 100%),
-    radial-gradient(circle at 54% 76%, rgba(121, 79, 42, 0.12) 0 1.4%, transparent 1.6% 100%),
-    radial-gradient(circle at 20% 70%, rgba(121, 79, 42, 0.1) 0 1.1%, transparent 1.3% 100%),
-    repeating-radial-gradient(circle at 50% 50%, rgba(116, 74, 36, 0.06) 0 1px, transparent 1px 14px),
-    linear-gradient(180deg, rgba(255, 247, 228, 0.34), rgba(255, 255, 255, 0.08) 12%, transparent 24%),
-    linear-gradient(135deg, var(--board-light), var(--board-mid) 52%, var(--board-dark));
+    radial-gradient(circle at 50% 52%, rgba(255, 227, 170, 0.18), transparent 26%),
+    radial-gradient(circle at 18% 18%, rgba(255, 241, 213, 0.16), transparent 22%),
+    radial-gradient(circle at 82% 20%, rgba(255, 241, 213, 0.14), transparent 18%),
+    radial-gradient(circle at 12% 88%, rgba(44, 22, 14, 0.42), transparent 18%),
+    radial-gradient(circle at 88% 88%, rgba(44, 22, 14, 0.42), transparent 18%),
+    radial-gradient(circle at 50% 50%, rgba(95, 47, 23, 0.08) 0 1.2%, transparent 1.4% 100%),
+    repeating-radial-gradient(circle at 50% 54%, rgba(96, 58, 31, 0.08) 0 2px, transparent 2px 24px),
+    linear-gradient(180deg, rgba(255, 246, 220, 0.18), transparent 14%, rgba(42, 18, 10, 0.08) 100%),
+    linear-gradient(135deg, #bf8a53 0%, #9b6637 52%, #5f381d 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 246, 228, 0.4),
-    inset 0 -22px 36px rgba(84, 49, 22, 0.22),
-    0 32px 64px rgba(0, 0, 0, 0.28);
+    inset 0 1px 0 rgba(255, 246, 228, 0.28),
+    inset 0 -28px 46px rgba(44, 22, 12, 0.34),
+    0 34px 70px rgba(0, 0, 0, 0.32);
   transition: box-shadow 320ms ease, transform 320ms ease;
 }
 
@@ -951,6 +950,70 @@ button:hover {
   inset: 24px;
   border-radius: 22px;
   border-color: rgba(135, 100, 68, 0.42);
+}
+
+.board-watermark {
+  position: absolute;
+  left: 50%;
+  top: 53%;
+  z-index: 0;
+  width: min(42vw, 260px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+.board-watermark::before,
+.board-watermark::after,
+.board-watermark-eye::before,
+.board-watermark-eye::after {
+  content: "";
+  position: absolute;
+}
+
+.board-watermark::before {
+  inset: 12%;
+  border: 1.5px solid rgba(52, 31, 20, 0.3);
+  border-radius: 50%;
+}
+
+.board-watermark::after {
+  inset: 28%;
+  border: 1.5px solid rgba(52, 31, 20, 0.22);
+  border-radius: 50%;
+}
+
+.board-watermark-eye {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 38%;
+  height: 18%;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(52, 31, 20, 0.28);
+  border-radius: 50% / 65%;
+}
+
+.board-watermark-eye::before {
+  left: 50%;
+  top: 50%;
+  width: 18%;
+  height: 38%;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(52, 31, 20, 0.3);
+}
+
+.board-watermark-eye::after {
+  left: 50%;
+  top: 50%;
+  width: 58%;
+  height: 180%;
+  border-top: 1.5px solid rgba(52, 31, 20, 0.22);
+  border-bottom: 1.5px solid rgba(52, 31, 20, 0.22);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .board.is-haunted {
@@ -1161,13 +1224,13 @@ body[data-haunt-level="Attached"] #invite-link {
   left: 9%;
   right: 9%;
   padding-inline: 0;
-  font-size: clamp(1.45rem, 2.3vw, 2.3rem);
+  font-size: clamp(1.4rem, 2vw, 2rem);
   font-weight: 700;
   letter-spacing: 0.04em;
 }
 
 .board-top {
-  top: 8.5%;
+  top: 17%;
 }
 
 .board-top span:first-child,
@@ -1186,19 +1249,19 @@ body[data-haunt-level="Attached"] #invite-link {
   align-items: center;
   justify-items: center;
   left: 50%;
-  width: 74%;
+  width: 78%;
   transform: translateX(-50%);
-  font-size: clamp(1.95rem, 2.9vw, 3rem);
+  font-size: clamp(1.7rem, 2.35vw, 2.45rem);
   font-weight: 700;
   line-height: 1;
 }
 
 .letters-top {
-  top: 31.5%;
+  top: 37%;
 }
 
 .letters-bottom {
-  top: 48%;
+  top: 53%;
 }
 
 .numbers {
@@ -1207,10 +1270,10 @@ body[data-haunt-level="Attached"] #invite-link {
   align-items: center;
   justify-items: center;
   left: 50%;
-  top: 66.5%;
-  width: 52%;
+  top: 71%;
+  width: 58%;
   transform: translateX(-50%);
-  font-size: clamp(2rem, 2.8vw, 3rem);
+  font-size: clamp(1.95rem, 2.4vw, 2.5rem);
   font-weight: 700;
   line-height: 1;
 }
@@ -1218,8 +1281,8 @@ body[data-haunt-level="Attached"] #invite-link {
 .board-bottom {
   left: 13%;
   right: 13%;
-  bottom: 6.5%;
-  font-size: clamp(2rem, 3vw, 3.15rem);
+  bottom: 7%;
+  font-size: clamp(2rem, 2.4vw, 2.7rem);
 }
 
 .board-top span,
@@ -1230,49 +1293,49 @@ body[data-haunt-level="Attached"] #invite-link {
   transform-origin: center center;
 }
 
-.letters-top span:nth-child(1) { transform: translateY(26px) rotate(-26deg); }
-.letters-top span:nth-child(2) { transform: translateY(18px) rotate(-22deg); }
-.letters-top span:nth-child(3) { transform: translateY(11px) rotate(-18deg); }
-.letters-top span:nth-child(4) { transform: translateY(5px) rotate(-14deg); }
-.letters-top span:nth-child(5) { transform: translateY(0) rotate(-10deg); }
-.letters-top span:nth-child(6) { transform: translateY(-4px) rotate(-6deg); }
-.letters-top span:nth-child(7) { transform: translateY(-6px) rotate(0deg); }
-.letters-top span:nth-child(8) { transform: translateY(-4px) rotate(6deg); }
-.letters-top span:nth-child(9) { transform: translateY(0) rotate(10deg); }
-.letters-top span:nth-child(10) { transform: translateY(5px) rotate(14deg); }
-.letters-top span:nth-child(11) { transform: translateY(11px) rotate(18deg); }
-.letters-top span:nth-child(12) { transform: translateY(18px) rotate(22deg); }
-.letters-top span:nth-child(13) { transform: translateY(26px) rotate(26deg); }
+.letters-top span:nth-child(1) { transform: translateY(16px) rotate(-20deg); }
+.letters-top span:nth-child(2) { transform: translateY(11px) rotate(-17deg); }
+.letters-top span:nth-child(3) { transform: translateY(7px) rotate(-14deg); }
+.letters-top span:nth-child(4) { transform: translateY(4px) rotate(-10deg); }
+.letters-top span:nth-child(5) { transform: translateY(1px) rotate(-7deg); }
+.letters-top span:nth-child(6) { transform: translateY(-1px) rotate(-4deg); }
+.letters-top span:nth-child(7) { transform: translateY(-2px) rotate(0deg); }
+.letters-top span:nth-child(8) { transform: translateY(-1px) rotate(4deg); }
+.letters-top span:nth-child(9) { transform: translateY(1px) rotate(7deg); }
+.letters-top span:nth-child(10) { transform: translateY(4px) rotate(10deg); }
+.letters-top span:nth-child(11) { transform: translateY(7px) rotate(14deg); }
+.letters-top span:nth-child(12) { transform: translateY(11px) rotate(17deg); }
+.letters-top span:nth-child(13) { transform: translateY(16px) rotate(20deg); }
 
-.letters-bottom span:nth-child(1) { transform: translateY(-4px) rotate(-18deg); }
-.letters-bottom span:nth-child(2) { transform: translateY(1px) rotate(-15deg); }
-.letters-bottom span:nth-child(3) { transform: translateY(7px) rotate(-12deg); }
-.letters-bottom span:nth-child(4) { transform: translateY(12px) rotate(-9deg); }
-.letters-bottom span:nth-child(5) { transform: translateY(16px) rotate(-6deg); }
-.letters-bottom span:nth-child(6) { transform: translateY(19px) rotate(-3deg); }
-.letters-bottom span:nth-child(7) { transform: translateY(20px) rotate(0deg); }
-.letters-bottom span:nth-child(8) { transform: translateY(19px) rotate(3deg); }
-.letters-bottom span:nth-child(9) { transform: translateY(16px) rotate(6deg); }
-.letters-bottom span:nth-child(10) { transform: translateY(12px) rotate(9deg); }
-.letters-bottom span:nth-child(11) { transform: translateY(7px) rotate(12deg); }
-.letters-bottom span:nth-child(12) { transform: translateY(1px) rotate(15deg); }
-.letters-bottom span:nth-child(13) { transform: translateY(-4px) rotate(18deg); }
+.letters-bottom span:nth-child(1) { transform: translateY(-3px) rotate(-14deg); }
+.letters-bottom span:nth-child(2) { transform: translateY(0) rotate(-12deg); }
+.letters-bottom span:nth-child(3) { transform: translateY(4px) rotate(-9deg); }
+.letters-bottom span:nth-child(4) { transform: translateY(8px) rotate(-7deg); }
+.letters-bottom span:nth-child(5) { transform: translateY(10px) rotate(-5deg); }
+.letters-bottom span:nth-child(6) { transform: translateY(12px) rotate(-2deg); }
+.letters-bottom span:nth-child(7) { transform: translateY(13px) rotate(0deg); }
+.letters-bottom span:nth-child(8) { transform: translateY(12px) rotate(2deg); }
+.letters-bottom span:nth-child(9) { transform: translateY(10px) rotate(5deg); }
+.letters-bottom span:nth-child(10) { transform: translateY(8px) rotate(7deg); }
+.letters-bottom span:nth-child(11) { transform: translateY(4px) rotate(9deg); }
+.letters-bottom span:nth-child(12) { transform: translateY(0) rotate(12deg); }
+.letters-bottom span:nth-child(13) { transform: translateY(-3px) rotate(14deg); }
 
-.numbers span:nth-child(1) { transform: translateY(8px) rotate(-8deg); }
-.numbers span:nth-child(2) { transform: translateY(5px) rotate(-6deg); }
-.numbers span:nth-child(3) { transform: translateY(2px) rotate(-4deg); }
-.numbers span:nth-child(4) { transform: translateY(0) rotate(-2deg); }
-.numbers span:nth-child(5) { transform: translateY(-1px) rotate(-1deg); }
-.numbers span:nth-child(6) { transform: translateY(-1px) rotate(1deg); }
-.numbers span:nth-child(7) { transform: translateY(0) rotate(2deg); }
-.numbers span:nth-child(8) { transform: translateY(2px) rotate(4deg); }
-.numbers span:nth-child(9) { transform: translateY(5px) rotate(6deg); }
-.numbers span:nth-child(10) { transform: translateY(8px) rotate(8deg); }
+.numbers span:nth-child(1) { transform: translateY(6px) rotate(-6deg); }
+.numbers span:nth-child(2) { transform: translateY(4px) rotate(-5deg); }
+.numbers span:nth-child(3) { transform: translateY(2px) rotate(-3deg); }
+.numbers span:nth-child(4) { transform: translateY(1px) rotate(-2deg); }
+.numbers span:nth-child(5) { transform: translateY(0) rotate(-1deg); }
+.numbers span:nth-child(6) { transform: translateY(0) rotate(1deg); }
+.numbers span:nth-child(7) { transform: translateY(1px) rotate(2deg); }
+.numbers span:nth-child(8) { transform: translateY(2px) rotate(3deg); }
+.numbers span:nth-child(9) { transform: translateY(4px) rotate(5deg); }
+.numbers span:nth-child(10) { transform: translateY(6px) rotate(6deg); }
 
 .board-crest {
   position: absolute;
   left: 50%;
-  top: 3.5%;
+  top: 4.5%;
   z-index: 1;
   display: grid;
   gap: 1px;
@@ -1286,33 +1349,35 @@ body[data-haunt-level="Attached"] #invite-link {
 .board-maker {
   margin: 0;
   font-size: 0.5rem;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.26em;
   text-transform: uppercase;
+  opacity: 0.8;
 }
 
 .board-title {
   margin: 0;
   font-family: "Cinzel", serif;
-  font-size: clamp(2.6rem, 5vw, 4.8rem);
+  font-size: clamp(2.7rem, 4.7vw, 4.2rem);
   line-height: 0.9;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.16em;
 }
 
 .board-subtitle {
   margin: 0;
   font-family: "Cinzel", serif;
-  font-size: clamp(0.72rem, 1.35vw, 1rem);
-  letter-spacing: 0.12em;
+  font-size: clamp(0.72rem, 1.15vw, 0.92rem);
+  letter-spacing: 0.26em;
   text-transform: uppercase;
+  opacity: 0.84;
 }
 
 .board-ornament {
   position: absolute;
-  top: 5.5%;
+  top: 5%;
   z-index: 1;
   display: grid;
   place-items: center;
-  width: 64px;
+  width: 68px;
   aspect-ratio: 1;
   border-radius: 50%;
   border: 2px solid rgba(33, 25, 21, 0.85);
@@ -1321,7 +1386,7 @@ body[data-haunt-level="Attached"] #invite-link {
     radial-gradient(circle at 50% 50%, rgba(238, 217, 185, 0.92), rgba(173, 128, 86, 0.95));
   box-shadow: inset 0 0 0 7px rgba(25, 19, 16, 0.9);
   color: var(--board-ink);
-  font-size: 1.9rem;
+  font-size: 1.35rem;
   line-height: 1;
 }
 
@@ -1349,14 +1414,14 @@ body[data-haunt-level="Attached"] #invite-link {
 .planchette {
   position: absolute;
   left: 50%;
-  top: 68%;
+  top: 69%;
   z-index: 3;
-  width: 98px;
-  height: 124px;
+  width: 88px;
+  height: 112px;
   padding: 0;
-  border-radius: 44% 44% 62% 62%;
+  border-radius: 48% 48% 58% 58% / 40% 40% 60% 60%;
   background:
-    linear-gradient(180deg, #111011, #141317 58%, #1f1818 100%);
+    linear-gradient(180deg, #171419, #0f0d12 58%, #09080d 100%);
   border: 4px solid rgba(212, 180, 108, 0.95);
   box-shadow:
     inset 0 0 0 4px rgba(29, 27, 25, 0.95),
@@ -1389,16 +1454,16 @@ body[data-haunt-level="Attached"] #invite-link {
   position: absolute;
   left: 50%;
   top: 40%;
-  width: 42px;
+  width: 28px;
   height: 42px;
-  border-radius: 50%;
+  border-radius: 50% 50% 46% 46%;
   transform: translate(-50%, -50%);
   background:
-    radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.98), rgba(214, 216, 222, 0.9) 38%, rgba(103, 108, 117, 0.82) 64%, rgba(26, 29, 34, 0.96) 100%);
-  border: 5px solid rgba(167, 132, 74, 0.95);
+    radial-gradient(circle at 50% 46%, rgba(255, 255, 255, 0.98), rgba(200, 208, 221, 0.94) 30%, rgba(79, 98, 120, 0.9) 52%, rgba(18, 24, 32, 0.98) 74%, rgba(6, 10, 14, 1) 100%);
+  border: 4px solid rgba(167, 132, 74, 0.95);
   box-shadow:
-    inset 0 1px 14px rgba(255, 255, 255, 0.46),
-    0 0 0 4px rgba(21, 18, 16, 0.85),
+    inset 0 1px 12px rgba(255, 255, 255, 0.46),
+    0 0 0 3px rgba(21, 18, 16, 0.85),
     0 0 18px rgba(255, 247, 230, 0.22);
 }
 
@@ -1411,9 +1476,9 @@ body[data-haunt-level="Attached"] #invite-link {
 
 .planchette-window::before {
   left: 50%;
-  top: 18%;
-  width: 42%;
-  height: 18%;
+  top: 16%;
+  width: 46%;
+  height: 14%;
   border-radius: 50%;
   transform: translateX(-50%);
   background: radial-gradient(circle, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.08));
@@ -1422,12 +1487,12 @@ body[data-haunt-level="Attached"] #invite-link {
 
 .planchette-window::after {
   left: 50%;
-  top: 50%;
-  width: 36%;
-  height: 36%;
+  top: 52%;
+  width: 38%;
+  height: 28%;
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  background: radial-gradient(circle at 50% 35%, rgba(38, 44, 52, 0.98), rgba(11, 13, 16, 1) 70%);
+  background: radial-gradient(circle at 50% 35%, rgba(28, 34, 40, 0.98), rgba(8, 12, 16, 1) 70%);
   box-shadow: 0 0 10px rgba(255, 244, 214, 0.12);
 }
 
@@ -1440,19 +1505,11 @@ body[data-haunt-level="Attached"] #invite-link {
 }
 
 .planchette-goodbye {
-  top: 14px;
-  left: 50%;
-  font-family: "Cinzel", serif;
-  font-size: 0.62rem;
-  letter-spacing: 0.03em;
-  transform: translateX(-50%);
+  display: none;
 }
 
 .planchette-mark {
-  font-family: "Cinzel", serif;
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  display: none;
 }
 
 .planchette-mark-yes {
@@ -1467,9 +1524,9 @@ body[data-haunt-level="Attached"] #invite-link {
 
 .planchette-emblem {
   left: 50%;
-  top: 72%;
-  width: 48px;
-  height: 24px;
+  top: 74%;
+  width: 42px;
+  height: 20px;
   transform: translateX(-50%);
 }
 
@@ -1485,8 +1542,8 @@ body[data-haunt-level="Attached"] #invite-link {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 34px;
-  height: 16px;
+  width: 30px;
+  height: 14px;
   transform: translate(-50%, -50%);
   border: 2px solid rgba(232, 198, 118, 0.96);
   border-radius: 50% / 65%;
@@ -1495,8 +1552,8 @@ body[data-haunt-level="Attached"] #invite-link {
 .planchette-eye::before {
   left: 50%;
   top: 50%;
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   transform: translate(-50%, -50%);
   background: rgba(232, 198, 118, 0.96);
@@ -1505,8 +1562,8 @@ body[data-haunt-level="Attached"] #invite-link {
 .planchette-eye::after {
   left: 50%;
   top: 50%;
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   border: 1px solid rgba(232, 198, 118, 0.7);
   border-radius: 50%;
   transform: translate(-50%, -50%);
