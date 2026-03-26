@@ -1145,11 +1145,12 @@ body[data-haunt-level="Attached"] #invite-link {
 .board-bottom,
 .letters,
 .numbers {
-  position: relative;
+  position: absolute;
   z-index: 1;
   color: var(--board-ink);
   font-family: "Cinzel", serif;
   text-shadow: 0 1px 0 rgba(255, 247, 224, 0.14);
+  pointer-events: none;
 }
 
 .board-top,
@@ -1157,16 +1158,16 @@ body[data-haunt-level="Attached"] #invite-link {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;
-  width: min(100%, 92%);
-  margin-inline: auto;
+  left: 9%;
+  right: 9%;
   padding-inline: 0;
-  font-size: clamp(1.55rem, 2.8vw, 2.8rem);
+  font-size: clamp(1.45rem, 2.3vw, 2.3rem);
   font-weight: 700;
   letter-spacing: 0.04em;
 }
 
 .board-top {
-  margin-top: 10px;
+  top: 8.5%;
 }
 
 .board-top span:first-child,
@@ -1184,16 +1185,20 @@ body[data-haunt-level="Attached"] #invite-link {
   grid-template-columns: repeat(13, minmax(0, 1fr));
   align-items: center;
   justify-items: center;
-  width: min(100%, 92%);
-  margin-inline: auto;
-  margin-top: clamp(74px, 10vw, 102px);
-  font-size: clamp(1.75rem, 2.8vw, 3.15rem);
+  left: 50%;
+  width: 74%;
+  transform: translateX(-50%);
+  font-size: clamp(1.95rem, 2.9vw, 3rem);
   font-weight: 700;
   line-height: 1;
 }
 
+.letters-top {
+  top: 31.5%;
+}
+
 .letters-bottom {
-  margin-top: clamp(26px, 3.8vw, 40px);
+  top: 48%;
 }
 
 .numbers {
@@ -1201,18 +1206,20 @@ body[data-haunt-level="Attached"] #invite-link {
   grid-template-columns: repeat(10, minmax(0, 1fr));
   align-items: center;
   justify-items: center;
-  width: min(100%, 74%);
-  margin-inline: auto;
-  margin-top: clamp(30px, 5vw, 56px);
-  font-size: clamp(1.8rem, 2.8vw, 3rem);
+  left: 50%;
+  top: 66.5%;
+  width: 52%;
+  transform: translateX(-50%);
+  font-size: clamp(2rem, 2.8vw, 3rem);
   font-weight: 700;
   line-height: 1;
 }
 
 .board-bottom {
-  width: min(100%, 84%);
-  margin-top: clamp(38px, 6vw, 62px);
-  font-size: clamp(2rem, 3.1vw, 3.3rem);
+  left: 13%;
+  right: 13%;
+  bottom: 6.5%;
+  font-size: clamp(2rem, 3vw, 3.15rem);
 }
 
 .board-top span,
@@ -1223,52 +1230,52 @@ body[data-haunt-level="Attached"] #invite-link {
   transform-origin: center center;
 }
 
-.letters-top span:nth-child(1) { transform: translateY(18px) rotate(-24deg); }
-.letters-top span:nth-child(2) { transform: translateY(11px) rotate(-19deg); }
-.letters-top span:nth-child(3) { transform: translateY(5px) rotate(-15deg); }
-.letters-top span:nth-child(4) { transform: translateY(0) rotate(-11deg); }
-.letters-top span:nth-child(5) { transform: translateY(-4px) rotate(-7deg); }
-.letters-top span:nth-child(6) { transform: translateY(-8px) rotate(-3deg); }
-.letters-top span:nth-child(7) { transform: translateY(-10px) rotate(0deg); }
-.letters-top span:nth-child(8) { transform: translateY(-8px) rotate(3deg); }
-.letters-top span:nth-child(9) { transform: translateY(-4px) rotate(7deg); }
-.letters-top span:nth-child(10) { transform: translateY(0) rotate(11deg); }
-.letters-top span:nth-child(11) { transform: translateY(5px) rotate(15deg); }
-.letters-top span:nth-child(12) { transform: translateY(11px) rotate(19deg); }
-.letters-top span:nth-child(13) { transform: translateY(18px) rotate(24deg); }
+.letters-top span:nth-child(1) { transform: translateY(26px) rotate(-26deg); }
+.letters-top span:nth-child(2) { transform: translateY(18px) rotate(-22deg); }
+.letters-top span:nth-child(3) { transform: translateY(11px) rotate(-18deg); }
+.letters-top span:nth-child(4) { transform: translateY(5px) rotate(-14deg); }
+.letters-top span:nth-child(5) { transform: translateY(0) rotate(-10deg); }
+.letters-top span:nth-child(6) { transform: translateY(-4px) rotate(-6deg); }
+.letters-top span:nth-child(7) { transform: translateY(-6px) rotate(0deg); }
+.letters-top span:nth-child(8) { transform: translateY(-4px) rotate(6deg); }
+.letters-top span:nth-child(9) { transform: translateY(0) rotate(10deg); }
+.letters-top span:nth-child(10) { transform: translateY(5px) rotate(14deg); }
+.letters-top span:nth-child(11) { transform: translateY(11px) rotate(18deg); }
+.letters-top span:nth-child(12) { transform: translateY(18px) rotate(22deg); }
+.letters-top span:nth-child(13) { transform: translateY(26px) rotate(26deg); }
 
-.letters-bottom span:nth-child(1) { transform: translateY(-2px) rotate(-18deg); }
-.letters-bottom span:nth-child(2) { transform: translateY(3px) rotate(-14deg); }
-.letters-bottom span:nth-child(3) { transform: translateY(8px) rotate(-11deg); }
-.letters-bottom span:nth-child(4) { transform: translateY(12px) rotate(-8deg); }
-.letters-bottom span:nth-child(5) { transform: translateY(15px) rotate(-5deg); }
-.letters-bottom span:nth-child(6) { transform: translateY(17px) rotate(-2deg); }
-.letters-bottom span:nth-child(7) { transform: translateY(18px) rotate(0deg); }
-.letters-bottom span:nth-child(8) { transform: translateY(17px) rotate(2deg); }
-.letters-bottom span:nth-child(9) { transform: translateY(15px) rotate(5deg); }
-.letters-bottom span:nth-child(10) { transform: translateY(12px) rotate(8deg); }
-.letters-bottom span:nth-child(11) { transform: translateY(8px) rotate(11deg); }
-.letters-bottom span:nth-child(12) { transform: translateY(3px) rotate(14deg); }
-.letters-bottom span:nth-child(13) { transform: translateY(-2px) rotate(18deg); }
+.letters-bottom span:nth-child(1) { transform: translateY(-4px) rotate(-18deg); }
+.letters-bottom span:nth-child(2) { transform: translateY(1px) rotate(-15deg); }
+.letters-bottom span:nth-child(3) { transform: translateY(7px) rotate(-12deg); }
+.letters-bottom span:nth-child(4) { transform: translateY(12px) rotate(-9deg); }
+.letters-bottom span:nth-child(5) { transform: translateY(16px) rotate(-6deg); }
+.letters-bottom span:nth-child(6) { transform: translateY(19px) rotate(-3deg); }
+.letters-bottom span:nth-child(7) { transform: translateY(20px) rotate(0deg); }
+.letters-bottom span:nth-child(8) { transform: translateY(19px) rotate(3deg); }
+.letters-bottom span:nth-child(9) { transform: translateY(16px) rotate(6deg); }
+.letters-bottom span:nth-child(10) { transform: translateY(12px) rotate(9deg); }
+.letters-bottom span:nth-child(11) { transform: translateY(7px) rotate(12deg); }
+.letters-bottom span:nth-child(12) { transform: translateY(1px) rotate(15deg); }
+.letters-bottom span:nth-child(13) { transform: translateY(-4px) rotate(18deg); }
 
-.numbers span:nth-child(1) { transform: translateY(7px) rotate(-8deg); }
-.numbers span:nth-child(2) { transform: translateY(4px) rotate(-6deg); }
+.numbers span:nth-child(1) { transform: translateY(8px) rotate(-8deg); }
+.numbers span:nth-child(2) { transform: translateY(5px) rotate(-6deg); }
 .numbers span:nth-child(3) { transform: translateY(2px) rotate(-4deg); }
 .numbers span:nth-child(4) { transform: translateY(0) rotate(-2deg); }
 .numbers span:nth-child(5) { transform: translateY(-1px) rotate(-1deg); }
 .numbers span:nth-child(6) { transform: translateY(-1px) rotate(1deg); }
 .numbers span:nth-child(7) { transform: translateY(0) rotate(2deg); }
 .numbers span:nth-child(8) { transform: translateY(2px) rotate(4deg); }
-.numbers span:nth-child(9) { transform: translateY(4px) rotate(6deg); }
-.numbers span:nth-child(10) { transform: translateY(7px) rotate(8deg); }
+.numbers span:nth-child(9) { transform: translateY(5px) rotate(6deg); }
+.numbers span:nth-child(10) { transform: translateY(8px) rotate(8deg); }
 
 .board-crest {
   position: absolute;
   left: 50%;
-  top: 20px;
+  top: 3.5%;
   z-index: 1;
   display: grid;
-  gap: 3px;
+  gap: 1px;
   justify-items: center;
   transform: translateX(-50%);
   color: var(--board-ink);
@@ -1278,34 +1285,34 @@ body[data-haunt-level="Attached"] #invite-link {
 
 .board-maker {
   margin: 0;
-  font-size: 0.54rem;
-  letter-spacing: 0.18em;
+  font-size: 0.5rem;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
 .board-title {
   margin: 0;
   font-family: "Cinzel", serif;
-  font-size: clamp(2.6rem, 5.8vw, 5.8rem);
-  line-height: 0.88;
-  letter-spacing: 0.1em;
+  font-size: clamp(2.6rem, 5vw, 4.8rem);
+  line-height: 0.9;
+  letter-spacing: 0.06em;
 }
 
 .board-subtitle {
   margin: 0;
   font-family: "Cinzel", serif;
-  font-size: clamp(0.85rem, 1.7vw, 1.35rem);
-  letter-spacing: 0.1em;
+  font-size: clamp(0.72rem, 1.35vw, 1rem);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .board-ornament {
   position: absolute;
-  top: 18px;
+  top: 5.5%;
   z-index: 1;
   display: grid;
   place-items: center;
-  width: 78px;
+  width: 64px;
   aspect-ratio: 1;
   border-radius: 50%;
   border: 2px solid rgba(33, 25, 21, 0.85);
@@ -1314,7 +1321,7 @@ body[data-haunt-level="Attached"] #invite-link {
     radial-gradient(circle at 50% 50%, rgba(238, 217, 185, 0.92), rgba(173, 128, 86, 0.95));
   box-shadow: inset 0 0 0 7px rgba(25, 19, 16, 0.9);
   color: var(--board-ink);
-  font-size: 2.4rem;
+  font-size: 1.9rem;
   line-height: 1;
 }
 
@@ -1328,11 +1335,11 @@ body[data-haunt-level="Attached"] #invite-link {
 }
 
 .board-ornament-sun {
-  left: 22px;
+  left: 3.2%;
 }
 
 .board-ornament-moon {
-  right: 22px;
+  right: 3.2%;
 }
 
 .board-ornament span {
@@ -1342,10 +1349,10 @@ body[data-haunt-level="Attached"] #invite-link {
 .planchette {
   position: absolute;
   left: 50%;
-  top: 72%;
+  top: 68%;
   z-index: 3;
-  width: 122px;
-  height: 152px;
+  width: 98px;
+  height: 124px;
   padding: 0;
   border-radius: 44% 44% 62% 62%;
   background:
@@ -1355,7 +1362,7 @@ body[data-haunt-level="Attached"] #invite-link {
     inset 0 0 0 4px rgba(29, 27, 25, 0.95),
     0 22px 28px rgba(0, 0, 0, 0.28),
     0 0 0 1px rgba(255, 240, 206, 0.08);
-  transform: translate(-50%, -50%) rotate(45deg);
+  transform: translate(-50%, -50%);
   touch-action: none;
   transition:
     left 280ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -1381,11 +1388,11 @@ body[data-haunt-level="Attached"] #invite-link {
 .planchette-window {
   position: absolute;
   left: 50%;
-  top: 34%;
-  width: 50px;
-  height: 50px;
+  top: 40%;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  transform: translate(-50%, -50%) rotate(-45deg);
+  transform: translate(-50%, -50%);
   background:
     radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.98), rgba(214, 216, 222, 0.9) 38%, rgba(103, 108, 117, 0.82) 64%, rgba(26, 29, 34, 0.96) 100%);
   border: 5px solid rgba(167, 132, 74, 0.95);
@@ -1428,42 +1435,42 @@ body[data-haunt-level="Attached"] #invite-link {
 .planchette-goodbye,
 .planchette-emblem {
   position: absolute;
-  transform: rotate(-45deg);
   color: rgba(232, 198, 118, 0.96);
   pointer-events: none;
 }
 
 .planchette-goodbye {
-  top: 12px;
-  left: 16px;
+  top: 14px;
+  left: 50%;
   font-family: "Cinzel", serif;
-  font-size: 0.9rem;
+  font-size: 0.62rem;
   letter-spacing: 0.03em;
+  transform: translateX(-50%);
 }
 
 .planchette-mark {
   font-family: "Cinzel", serif;
-  font-size: 0.78rem;
+  font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
 
 .planchette-mark-yes {
-  left: 14px;
-  bottom: 16px;
+  left: 12px;
+  bottom: 20px;
 }
 
 .planchette-mark-no {
-  right: 16px;
-  bottom: 18px;
+  right: 14px;
+  bottom: 20px;
 }
 
 .planchette-emblem {
   left: 50%;
-  top: 68%;
-  width: 58px;
-  height: 30px;
-  transform: translateX(-50%) rotate(-45deg);
+  top: 72%;
+  width: 48px;
+  height: 24px;
+  transform: translateX(-50%);
 }
 
 .planchette-emblem::before,
@@ -1478,8 +1485,8 @@ body[data-haunt-level="Attached"] #invite-link {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 42px;
-  height: 20px;
+  width: 34px;
+  height: 16px;
   transform: translate(-50%, -50%);
   border: 2px solid rgba(232, 198, 118, 0.96);
   border-radius: 50% / 65%;
@@ -1498,8 +1505,8 @@ body[data-haunt-level="Attached"] #invite-link {
 .planchette-eye::after {
   left: 50%;
   top: 50%;
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   border: 1px solid rgba(232, 198, 118, 0.7);
   border-radius: 50%;
   transform: translate(-50%, -50%);

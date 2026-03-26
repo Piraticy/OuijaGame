@@ -86,10 +86,10 @@ const upsertWordStmt = db.prepare(`
 
 function createBoardTargets() {
   const targets = {
-    YES: { x: 14, y: 13 },
-    NO: { x: 86, y: 13 },
-    HELLO: { x: 18, y: 85 },
-    GOODBYE: { x: 82, y: 85 }
+    YES: { x: 16, y: 12 },
+    NO: { x: 84, y: 12 },
+    HELLO: { x: 22, y: 88 },
+    GOODBYE: { x: 78, y: 88 }
   };
 
   const addRow = (tokens, startX, endX, yValues) => {
@@ -103,9 +103,9 @@ function createBoardTargets() {
     });
   };
 
-  addRow("ABCDEFGHIJKLM".split(""), 12, 88, [34, 32.2, 30.8, 29.6, 28.6, 27.8, 27.4, 27.8, 28.6, 29.6, 30.8, 32.2, 34]);
-  addRow("NOPQRSTUVWXYZ".split(""), 12, 88, [45, 46.2, 47.3, 48.2, 49, 49.4, 49.6, 49.4, 49, 48.2, 47.3, 46.2, 45]);
-  addRow("1234567890".split(""), 24, 76, [62.2, 61.3, 60.6, 60.1, 59.8, 59.8, 60.1, 60.6, 61.3, 62.2]);
+  addRow("ABCDEFGHIJKLM".split(""), 18, 82, [44, 41.6, 39.5, 37.8, 36.4, 35.4, 35, 35.4, 36.4, 37.8, 39.5, 41.6, 44]);
+  addRow("NOPQRSTUVWXYZ".split(""), 18, 82, [58, 59.4, 60.8, 61.9, 62.7, 63.2, 63.4, 63.2, 62.7, 61.9, 60.8, 59.4, 58]);
+  addRow("1234567890".split(""), 28, 72, [77.5, 76.8, 76.1, 75.6, 75.3, 75.3, 75.6, 76.1, 76.8, 77.5]);
 
   return targets;
 }
