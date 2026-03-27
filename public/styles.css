@@ -676,14 +676,17 @@ button:hover {
 
 .invite-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   align-items: center;
 }
 
 .invite-row input {
+  grid-column: 1 / -1;
   color: var(--muted);
   font-size: 0.9rem;
+  min-width: 0;
+  text-overflow: ellipsis;
 }
 
 #room-code-display,
@@ -797,7 +800,7 @@ button:hover {
   height: 100%;
   max-width: min(100%, 1160px);
   max-height: calc(100dvh - 18px);
-  padding: 0 12px 26px;
+  padding: 0 12px 34px;
 }
 
 .board-wrap::before,
@@ -922,7 +925,7 @@ button:hover {
   overflow: hidden;
   width: min(100%, calc((100dvh - 170px) * 1.42));
   max-height: calc(100dvh - 198px);
-  margin: -34px auto 0;
+  margin: -64px auto 0;
   aspect-ratio: 1.42 / 1;
   border-radius: 32px;
   padding: clamp(22px, 3vw, 30px) clamp(20px, 3vw, 30px) clamp(20px, 2.8vw, 28px);
@@ -1276,7 +1279,7 @@ body[data-haunt-level="Attached"] #invite-link {
   align-items: center;
   justify-items: center;
   left: 50%;
-  top: 72.8%;
+  top: 71.2%;
   width: 58%;
   transform: translateX(-50%);
   font-size: clamp(2.15rem, 2.6vw, 2.8rem);
@@ -1287,7 +1290,7 @@ body[data-haunt-level="Attached"] #invite-link {
 .board-bottom {
   left: 8%;
   right: 8%;
-  bottom: 3.8%;
+  bottom: 1.6%;
   font-size: clamp(2.35rem, 3.05vw, 3.7rem);
 }
 

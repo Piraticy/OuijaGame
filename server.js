@@ -88,8 +88,8 @@ function createBoardTargets() {
   const targets = {
     YES: { x: 12, y: 20.5 },
     NO: { x: 88, y: 20.5 },
-    HELLO: { x: 22, y: 92 },
-    GOODBYE: { x: 78, y: 92 }
+    HELLO: { x: 22, y: 94 },
+    GOODBYE: { x: 78, y: 94 }
   };
 
   const addRow = (tokens, startX, endX, yValues) => {
@@ -105,7 +105,7 @@ function createBoardTargets() {
 
   addRow("ABCDEFGHIJKLM".split(""), 16, 84, [47, 44.8, 42.9, 41.3, 40.1, 39.3, 39, 39.3, 40.1, 41.3, 42.9, 44.8, 47]);
   addRow("NOPQRSTUVWXYZ".split(""), 16, 84, [58.5, 60.2, 61.8, 63.1, 64.1, 64.7, 64.9, 64.7, 64.1, 63.1, 61.8, 60.2, 58.5]);
-  addRow("1234567890".split(""), 26, 74, [78.8, 78.3, 77.9, 77.6, 77.4, 77.4, 77.6, 77.9, 78.3, 78.8]);
+  addRow("1234567890".split(""), 26, 74, [76.8, 76.3, 75.9, 75.6, 75.4, 75.4, 75.6, 75.9, 76.3, 76.8]);
 
   return targets;
 }
@@ -661,6 +661,8 @@ function extractQuestionProfile(question) {
       lowerQuestion
     ),
     asksAge: /\b(how old are you|your age|what age are you)\b/.test(lowerQuestion),
+    asksCount: /\b(how many|how much|count|number of)\b/.test(lowerQuestion),
+    asksNumber: /\b(what number|pick a number|give me a number|which number)\b/.test(lowerQuestion),
     asksRememberMe: /\b(do you remember me|remember me|have we met|seen me before|do you know me)\b/.test(
       lowerQuestion
     ),
@@ -687,6 +689,7 @@ function extractQuestionProfile(question) {
     ),
     asksSafety: /\bhelp|safe|scared|afraid|danger|leave|run\b/.test(lowerQuestion),
     asksTime: /\bwhen|time|night|midnight|hour|clock\b/.test(lowerQuestion),
+    asksYear: /\b(year|date|what year|which year)\b/.test(lowerQuestion),
     asksIdentity: /\bwho|name|what are you\b/.test(lowerQuestion),
     asksPresence: /\bare you|is someone|here|with me|in my\b/.test(lowerQuestion)
   };
@@ -698,6 +701,52 @@ function createBinaryFallback() {
     ["NO", 8],
     ["NOT YET", 2]
   ]);
+}
+
+function createNumberResponse(profile) {
+  if (profile.asksAge) {
+    return chooseWeighted([
+      ["8", 2],
+      ["13", 5],
+      ["19", 4],
+      ["33", 3],
+      ["100", 2],
+      ["OLDER THAN YOU", 3]
+    ]);
+  }
+
+  if (profile.asksTime) {
+    return chooseWeighted([
+      ["3 AM", 5],
+      ["12", 3],
+      ["MIDNIGHT", 4],
+      ["2", 2],
+      ["7", 2]
+    ]);
+  }
+
+  if (profile.asksYear) {
+    return chooseWeighted([
+      ["1886", 3],
+      ["1910", 3],
+      ["1927", 2],
+      ["1938", 2],
+      ["NOT YET", 2]
+    ]);
+  }
+
+  if (profile.asksCount || profile.asksNumber) {
+    return chooseWeighted([
+      ["3", 4],
+      ["7", 5],
+      ["8", 3],
+      ["13", 6],
+      ["21", 2],
+      ["33", 2]
+    ]);
+  }
+
+  return null;
 }
 
 function createRelationshipResponse(room) {
@@ -1127,14 +1176,8 @@ function createSpiritResponse(room, askedBy, question) {
     answer = createRelationshipResponse(room);
   } else if (profile.asksName) {
     answer = createIdentityResponse(room);
-  } else if (profile.asksAge) {
-    answer = chooseWeighted([
-      ["8", 2],
-      ["13", 4],
-      ["19", 3],
-      ["100", 2],
-      ["OLDER THAN YOU", 3]
-    ]);
+  } else if (profile.asksAge || profile.asksCount || profile.asksNumber || profile.asksYear) {
+    answer = createNumberResponse(profile) || createBinaryFallback();
   } else if (profile.asksHunger) {
     answer = createHungerResponse(room, askedBy, roomWord);
   } else if (profile.asksFeeling) {
@@ -1150,11 +1193,12 @@ function createSpiritResponse(room, askedBy, question) {
   } else if (profile.asksTime) {
     answer = profile.primaryWord
       ? chooseRandom([
+          buildPhrase("3 AM"),
+          buildPhrase("AT MIDNIGHT"),
           buildPhrase("WHEN", profile.primaryWord, "SLEEPS"),
-          buildPhrase("AFTER", profile.primaryWord),
-          buildPhrase("AT MIDNIGHT")
+          buildPhrase("AFTER", profile.primaryWord)
         ])
-      : chooseRandom(RESPONSE_LIBRARY.time);
+      : createNumberResponse(profile) || chooseRandom(RESPONSE_LIBRARY.time);
   } else if (profile.asksSafety) {
     answer = createRememberedWordResponse(room, askedBy, "warning", roomWord) || (roomWord
       ? chooseWeighted([

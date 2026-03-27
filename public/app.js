@@ -4,8 +4,8 @@ function createBoardTargets() {
   const targets = {
     YES: { x: 12, y: 20.5 },
     NO: { x: 88, y: 20.5 },
-    HELLO: { x: 22, y: 92 },
-    GOODBYE: { x: 78, y: 92 }
+    HELLO: { x: 22, y: 94 },
+    GOODBYE: { x: 78, y: 94 }
   };
 
   const addRow = (tokens, startX, endX, yValues) => {
@@ -21,7 +21,7 @@ function createBoardTargets() {
 
   addRow("ABCDEFGHIJKLM".split(""), 16, 84, [47, 44.8, 42.9, 41.3, 40.1, 39.3, 39, 39.3, 40.1, 41.3, 42.9, 44.8, 47]);
   addRow("NOPQRSTUVWXYZ".split(""), 16, 84, [58.5, 60.2, 61.8, 63.1, 64.1, 64.7, 64.9, 64.7, 64.1, 63.1, 61.8, 60.2, 58.5]);
-  addRow("1234567890".split(""), 26, 74, [78.8, 78.3, 77.9, 77.6, 77.4, 77.4, 77.6, 77.9, 78.3, 78.8]);
+  addRow("1234567890".split(""), 26, 74, [76.8, 76.3, 75.9, 75.6, 75.4, 75.4, 75.6, 75.9, 76.3, 76.8]);
 
   return targets;
 }
@@ -1280,7 +1280,7 @@ function buildInviteMessage(roomId) {
     `${inviterName} invited you to Ouija Online.`,
     `Join room ${roomId} and ask the board a question together.`,
     inviteLink,
-    "If you like it, open it on your phone or desktop and install it for a full-screen haunted board."
+    "Open it on phone or desktop, and install it for a full-screen haunted board if you want the full experience."
   ].join("\n");
 }
 
@@ -1299,6 +1299,7 @@ function syncUrlRoom(roomId) {
 function updateInviteLink(roomId) {
   if (!roomId) {
     inviteLinkInput.value = "Create or join a room to share an invite link";
+    inviteLinkInput.title = inviteLinkInput.value;
     if (shareInviteButton) {
       shareInviteButton.disabled = true;
     }
@@ -1307,6 +1308,7 @@ function updateInviteLink(roomId) {
   }
 
   inviteLinkInput.value = buildInviteLink(roomId);
+  inviteLinkInput.title = inviteLinkInput.value;
   if (shareInviteButton) {
     shareInviteButton.disabled = false;
   }
