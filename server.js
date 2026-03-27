@@ -131,25 +131,47 @@ const IDLE_PROMPTS = {
     "ARE YOU STILL HERE",
     "WHY ARE YOU QUIET",
     "WHO SITS WITH YOU",
-    "DO YOU HEAR ME"
+    "DO YOU HEAR ME",
+    "WHO TOUCHED THE BOARD",
+    "WHY DID THE ROOM GO STILL",
+    "WHO IS WATCHING WITH YOU",
+    "DO YOU SEE THE SHADOW",
+    "WHO STANDS BEHIND YOU",
+    "WHY IS THE BOARD WARM"
   ],
   hostile: [
     "WHY DID YOU CALL ME",
     "WHO IS IN THE ROOM",
     "WHY DID YOU COME BACK",
-    "ARE YOU AFRAID"
+    "ARE YOU AFRAID",
+    "WHY DID YOU OPEN THIS",
+    "WHO TOLD YOU TO STAY",
+    "DO YOU HEAR BREATHING",
+    "WHY DID YOU STOP MOVING",
+    "WHO LEFT THE LIGHT ON",
+    "ARE YOU ALONE NOW"
   ],
   mournful: [
     "DO YOU REMEMBER ME",
     "WILL YOU STAY",
     "WHO LEFT THE DOOR OPEN",
-    "CAN YOU HEAR THE HALL"
+    "CAN YOU HEAR THE HALL",
+    "WHO SAID MY NAME",
+    "DO YOU HEAR THE STAIRS",
+    "WILL YOU ANSWER ME",
+    "WHO LEFT ME HERE",
+    "WHY DID YOU GO QUIET"
   ],
   hungry: [
     "ARE YOU STILL LISTENING",
     "WHO FEEDS THE DARK",
     "WHY ARE YOU ALONE",
-    "WILL YOU ASK AGAIN"
+    "WILL YOU ASK AGAIN",
+    "WHO IS NEAREST THE DOOR",
+    "WHY DOES THE ROOM SHAKE",
+    "WHO IS BREATHING SOFTLY",
+    "WHO WILL LEAVE FIRST",
+    "DO YOU FEEL IT STARING"
   ]
 };
 
@@ -296,9 +318,11 @@ function createRoomState(roomId) {
       name: SPIRIT_NAME,
       lastAnswer: "",
       mood: haunting.mood,
-      memory: []
+      memory: [],
+      idlePrompts: []
     },
     idleTimer: null,
+    lastInteractionAt: Date.now(),
     timers: new Set()
   };
 }
@@ -424,9 +448,23 @@ function scheduleIdleHaunt(room) {
     return;
   }
 
+  const idleFor = Date.now() - (room.lastInteractionAt || 0);
+  const minIdleMs = 120000;
+  const maxExtraMs = 120000;
+  const delay = Math.max(0, minIdleMs - idleFor) + Math.floor(Math.random() * maxExtraMs);
+
   room.idleTimer = addRoomTimer(room, () => {
     triggerIdleHaunt(room);
-  }, 38000 + Math.floor(Math.random() * 18000));
+  }, delay);
+}
+
+function noteRoomInteraction(room) {
+  if (!room) {
+    return;
+  }
+
+  room.lastInteractionAt = Date.now();
+  scheduleIdleHaunt(room);
 }
 
 function broadcastRoom(room) {
@@ -987,12 +1025,19 @@ function createIdlePrompt(room) {
     promptPool.push(
       buildPhrase("WHY DID YOU RETURN", lastName),
       buildPhrase("ARE YOU STILL THERE", lastName),
-      buildPhrase("DO YOU REMEMBER ME", lastName)
+      buildPhrase("DO YOU REMEMBER ME", lastName),
+      buildPhrase(lastName, "WHY ARE YOU QUIET"),
+      buildPhrase(lastName, "WHO IS WITH YOU"),
+      buildPhrase(lastName, "DO NOT LOOK BACK")
     );
   }
 
-  const text = chooseRandom(promptPool).replace(/\s+/g, " ").trim();
+  const recentPrompts = room.spirit.idlePrompts || [];
+  const filteredPool = promptPool.filter((entry) => !recentPrompts.includes(entry));
+  const text = chooseRandom(filteredPool.length ? filteredPool : promptPool).replace(/\s+/g, " ").trim();
   const sequence = tokenizeAnswer(text).slice(0, 18);
+
+  room.spirit.idlePrompts = [...recentPrompts, text].slice(-8);
 
   return {
     text,
@@ -1281,6 +1326,11 @@ function triggerIdleHaunt(room) {
     return;
   }
 
+  if (Date.now() - (room.lastInteractionAt || 0) < 120000) {
+    scheduleIdleHaunt(room);
+    return;
+  }
+
   const prompt = createIdlePrompt(room);
   const stepMs = 360 + Math.floor(Math.random() * 120);
   const settleMs = 760 + Math.floor(Math.random() * 260);
@@ -1396,7 +1446,7 @@ io.on("connection", (socket) => {
 
     socket.emit("room:joined", getPublicState(room));
     broadcastRoom(room);
-    scheduleIdleHaunt(room);
+    noteRoomInteraction(room);
   });
 
   socket.on("room:question", ({ question }) => {
@@ -1419,6 +1469,7 @@ io.on("connection", (socket) => {
     broadcastRoom(room);
 
     clearIdleTimer(room);
+    noteRoomInteraction(room);
     beginSpiritSequence(room, player?.name || "Someone", safeQuestion);
   });
 
@@ -1449,6 +1500,7 @@ io.on("connection", (socket) => {
       y: clamp(Number(y) || 0, 10, 88)
     };
 
+    noteRoomInteraction(room);
     socket.to(room.roomId).emit("cursor:update", room.cursor);
   });
 
@@ -1468,6 +1520,7 @@ io.on("connection", (socket) => {
     room.history.push(value);
     trimHistory(room);
     broadcastRoom(room);
+    noteRoomInteraction(room);
   });
 
   socket.on("disconnect", () => {
