@@ -19,8 +19,8 @@ function createBoardTargets() {
     });
   };
 
-  addRow("ABCDEFGHIJKLM".split(""), 14, 86, [47.6, 44.9, 42.6, 40.8, 39.4, 38.5, 38.2, 38.5, 39.4, 40.8, 42.6, 44.9, 47.6]);
-  addRow("NOPQRSTUVWXYZ".split(""), 14, 86, [58.6, 60.7, 62.7, 64.2, 65.4, 66.1, 66.4, 66.1, 65.4, 64.2, 62.7, 60.7, 58.6]);
+  addRow("ABCDEFGHIJKLM".split(""), 16, 84, [47, 44.8, 42.9, 41.3, 40.1, 39.3, 39, 39.3, 40.1, 41.3, 42.9, 44.8, 47]);
+  addRow("NOPQRSTUVWXYZ".split(""), 16, 84, [58.5, 60.2, 61.8, 63.1, 64.1, 64.7, 64.9, 64.7, 64.1, 63.1, 61.8, 60.2, 58.5]);
   addRow("1234567890".split(""), 26, 74, [78.8, 78.3, 77.9, 77.6, 77.4, 77.4, 77.6, 77.9, 78.3, 78.8]);
 
   return targets;
@@ -43,6 +43,7 @@ const planchetteElement = document.getElementById("planchette");
 const recordGoodbyeButton = document.getElementById("record-goodbye");
 const generateRoomButton = document.getElementById("generate-room");
 const inviteLinkInput = document.getElementById("invite-link");
+const shareInviteButton = document.getElementById("share-invite");
 const copyInviteButton = document.getElementById("copy-invite");
 const toggleSpiritButton = document.getElementById("toggle-spirit");
 const spiritCardElement = document.getElementById("spirit-card");
@@ -1271,6 +1272,18 @@ function buildInviteLink(roomId) {
   return url.toString();
 }
 
+function buildInviteMessage(roomId) {
+  const inviteLink = buildInviteLink(roomId);
+  const inviterName = (nameInput.value.trim().slice(0, 18) || getSavedName() || "Guest").trim();
+
+  return [
+    `${inviterName} invited you to Ouija Online.`,
+    `Join room ${roomId} and ask the board a question together.`,
+    inviteLink,
+    "If you like it, open it on your phone or desktop and install it for a full-screen haunted board."
+  ].join("\n");
+}
+
 function syncUrlRoom(roomId) {
   const url = new URL(window.location.href);
 
@@ -1286,11 +1299,17 @@ function syncUrlRoom(roomId) {
 function updateInviteLink(roomId) {
   if (!roomId) {
     inviteLinkInput.value = "Create or join a room to share an invite link";
+    if (shareInviteButton) {
+      shareInviteButton.disabled = true;
+    }
     copyInviteButton.disabled = true;
     return;
   }
 
   inviteLinkInput.value = buildInviteLink(roomId);
+  if (shareInviteButton) {
+    shareInviteButton.disabled = false;
+  }
   copyInviteButton.disabled = false;
 }
 
@@ -1658,6 +1677,49 @@ generateRoomButton.addEventListener("click", () => {
   setStatus(`Invite code ${roomId} is ready to share.`);
 });
 
+async function shareInvite() {
+  const roomId = currentRoomId || normalizeRoomId(roomInput.value);
+
+  if (!roomId) {
+    setStatus("Create or join a room before sharing an invite.", true);
+    return;
+  }
+
+  const inviteLink = buildInviteLink(roomId);
+  const inviteMessage = buildInviteMessage(roomId);
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: "Ouija Online",
+        text: inviteMessage,
+        url: inviteLink
+      });
+      setStatus(`Invite sent for room ${roomId}.`);
+      return;
+    } catch (error) {
+      if (error && error.name === "AbortError") {
+        return;
+      }
+    }
+  }
+
+  try {
+    await navigator.clipboard.writeText(inviteMessage);
+    if (shareInviteButton) {
+      shareInviteButton.textContent = "Shared";
+      window.setTimeout(() => {
+        shareInviteButton.textContent = "Share";
+      }, 1400);
+    }
+    setStatus("Invite message copied. Send it to a friend to play or install.");
+  } catch (_error) {
+    inviteLinkInput.focus();
+    inviteLinkInput.select();
+    setStatus("Share message could not be copied, but the invite link is selected.", true);
+  }
+}
+
 copyInviteButton.addEventListener("click", async () => {
   const roomId = currentRoomId || normalizeRoomId(roomInput.value);
 
@@ -1681,6 +1743,12 @@ copyInviteButton.addEventListener("click", async () => {
     setStatus("Clipboard access failed, but the invite link is selected for copy.", true);
   }
 });
+
+if (shareInviteButton) {
+  shareInviteButton.addEventListener("click", () => {
+    shareInvite();
+  });
+}
 
 toggleSpiritButton.addEventListener("click", () => {
   setStatus("The Veil is always listening in every room.");

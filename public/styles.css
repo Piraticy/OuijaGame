@@ -674,6 +674,13 @@ button:hover {
   margin-top: 14px;
 }
 
+.invite-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+}
+
 .invite-row input {
   color: var(--muted);
   font-size: 0.9rem;
@@ -790,7 +797,7 @@ button:hover {
   height: 100%;
   max-width: min(100%, 1160px);
   max-height: calc(100dvh - 18px);
-  padding: 2px 12px 22px;
+  padding: 0 12px 26px;
 }
 
 .board-wrap::before,
@@ -915,7 +922,7 @@ button:hover {
   overflow: hidden;
   width: min(100%, calc((100dvh - 170px) * 1.42));
   max-height: calc(100dvh - 198px);
-  margin: -18px auto 0;
+  margin: -34px auto 0;
   aspect-ratio: 1.42 / 1;
   border-radius: 32px;
   padding: clamp(22px, 3vw, 30px) clamp(20px, 3vw, 30px) clamp(20px, 2.8vw, 28px);
@@ -1248,19 +1255,19 @@ body[data-haunt-level="Attached"] #invite-link {
   align-items: center;
   justify-items: center;
   left: 50%;
-  width: 90%;
+  width: 88%;
   transform: translateX(-50%);
-  font-size: clamp(2.05rem, 2.8vw, 3rem);
+  font-size: clamp(2rem, 2.65vw, 2.82rem);
   font-weight: 700;
   line-height: 1;
 }
 
 .letters-top {
-  top: 38.8%;
+  top: 39.2%;
 }
 
 .letters-bottom {
-  top: 54.2%;
+  top: 55%;
 }
 
 .numbers {
@@ -1292,33 +1299,33 @@ body[data-haunt-level="Attached"] #invite-link {
   transform-origin: center center;
 }
 
-.letters-top span:nth-child(1) { transform: translateY(14px) rotate(-18deg); }
-.letters-top span:nth-child(2) { transform: translateY(10px) rotate(-15deg); }
-.letters-top span:nth-child(3) { transform: translateY(7px) rotate(-12deg); }
-.letters-top span:nth-child(4) { transform: translateY(4px) rotate(-9deg); }
-.letters-top span:nth-child(5) { transform: translateY(2px) rotate(-6deg); }
-.letters-top span:nth-child(6) { transform: translateY(1px) rotate(-3deg); }
+.letters-top span:nth-child(1) { transform: translateY(12px) rotate(-16deg); }
+.letters-top span:nth-child(2) { transform: translateY(9px) rotate(-13deg); }
+.letters-top span:nth-child(3) { transform: translateY(6px) rotate(-10deg); }
+.letters-top span:nth-child(4) { transform: translateY(4px) rotate(-8deg); }
+.letters-top span:nth-child(5) { transform: translateY(2px) rotate(-5deg); }
+.letters-top span:nth-child(6) { transform: translateY(1px) rotate(-2deg); }
 .letters-top span:nth-child(7) { transform: translateY(0) rotate(0deg); }
-.letters-top span:nth-child(8) { transform: translateY(1px) rotate(3deg); }
-.letters-top span:nth-child(9) { transform: translateY(2px) rotate(6deg); }
-.letters-top span:nth-child(10) { transform: translateY(4px) rotate(9deg); }
-.letters-top span:nth-child(11) { transform: translateY(7px) rotate(12deg); }
-.letters-top span:nth-child(12) { transform: translateY(10px) rotate(15deg); }
-.letters-top span:nth-child(13) { transform: translateY(14px) rotate(18deg); }
+.letters-top span:nth-child(8) { transform: translateY(1px) rotate(2deg); }
+.letters-top span:nth-child(9) { transform: translateY(2px) rotate(5deg); }
+.letters-top span:nth-child(10) { transform: translateY(4px) rotate(8deg); }
+.letters-top span:nth-child(11) { transform: translateY(6px) rotate(10deg); }
+.letters-top span:nth-child(12) { transform: translateY(9px) rotate(13deg); }
+.letters-top span:nth-child(13) { transform: translateY(12px) rotate(16deg); }
 
-.letters-bottom span:nth-child(1) { transform: translateY(1px) rotate(-16deg); }
-.letters-bottom span:nth-child(2) { transform: translateY(4px) rotate(-13deg); }
-.letters-bottom span:nth-child(3) { transform: translateY(7px) rotate(-10deg); }
-.letters-bottom span:nth-child(4) { transform: translateY(10px) rotate(-7deg); }
-.letters-bottom span:nth-child(5) { transform: translateY(12px) rotate(-4deg); }
-.letters-bottom span:nth-child(6) { transform: translateY(13px) rotate(-2deg); }
-.letters-bottom span:nth-child(7) { transform: translateY(14px) rotate(0deg); }
-.letters-bottom span:nth-child(8) { transform: translateY(13px) rotate(2deg); }
-.letters-bottom span:nth-child(9) { transform: translateY(12px) rotate(4deg); }
-.letters-bottom span:nth-child(10) { transform: translateY(10px) rotate(7deg); }
-.letters-bottom span:nth-child(11) { transform: translateY(7px) rotate(10deg); }
-.letters-bottom span:nth-child(12) { transform: translateY(4px) rotate(13deg); }
-.letters-bottom span:nth-child(13) { transform: translateY(1px) rotate(16deg); }
+.letters-bottom span:nth-child(1) { transform: translateY(2px) rotate(-14deg); }
+.letters-bottom span:nth-child(2) { transform: translateY(5px) rotate(-11deg); }
+.letters-bottom span:nth-child(3) { transform: translateY(7px) rotate(-8deg); }
+.letters-bottom span:nth-child(4) { transform: translateY(9px) rotate(-6deg); }
+.letters-bottom span:nth-child(5) { transform: translateY(11px) rotate(-4deg); }
+.letters-bottom span:nth-child(6) { transform: translateY(12px) rotate(-2deg); }
+.letters-bottom span:nth-child(7) { transform: translateY(13px) rotate(0deg); }
+.letters-bottom span:nth-child(8) { transform: translateY(12px) rotate(2deg); }
+.letters-bottom span:nth-child(9) { transform: translateY(11px) rotate(4deg); }
+.letters-bottom span:nth-child(10) { transform: translateY(9px) rotate(6deg); }
+.letters-bottom span:nth-child(11) { transform: translateY(7px) rotate(8deg); }
+.letters-bottom span:nth-child(12) { transform: translateY(5px) rotate(11deg); }
+.letters-bottom span:nth-child(13) { transform: translateY(2px) rotate(14deg); }
 
 .numbers span:nth-child(1) { transform: translateY(8px) rotate(-7deg); }
 .numbers span:nth-child(2) { transform: translateY(6px) rotate(-5deg); }
