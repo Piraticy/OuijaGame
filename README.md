@@ -4,9 +4,22 @@ A small multiplayer Ouija-style browser game built with Node, Express, and Socke
 
 ## Version
 
-- Current version: `2.0.2`
+- Current version: `2.0.3`
 - Created by `Piraticy`
 - Source: [github.com/Piraticy/OuijaGame](https://github.com/Piraticy/OuijaGame)
+
+## What's New In 2.0.3
+
+- The planchette now always lands exactly on the letter/word it's spelling: targets are measured
+  live from the rendered board instead of hand-guessed coordinates
+- Bigger, clearer letters and numbers on the board's arc, so the spread reads at a glance while
+  keeping the antique curved-board look
+- Fixed a mobile layout bug where the letter rows could overlap the numbers and HELLO/GOODBYE row
+- The Veil's answers are now anchored to the actual subject of your question instead of
+  occasionally producing unrelated word combinations
+- Added a password-protected `/admin` dashboard with live player/room counts and install stats
+- Fixed the service worker so installed devices always pick up the latest version instead of
+  getting stuck on whatever was cached at install time
 
 ## What's New In 2.0.2
 
