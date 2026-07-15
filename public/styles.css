@@ -1376,21 +1376,25 @@ body[data-haunt-level="Attached"] #invite-link {
   letter-spacing: 0.1em;
 }
 
+.board-subtitle {
+  margin: 2px 0 0;
+  font-family: "Cinzel", serif;
+  font-size: clamp(0.68rem, 1vw, 0.92rem);
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
 .board-portrait {
   position: absolute;
   top: 4%;
   z-index: 1;
-  display: grid;
-  place-items: center;
   width: 60px;
   aspect-ratio: 1;
   border-radius: 50%;
   border: 4px solid rgba(39, 28, 20, 0.92);
-  background:
-    radial-gradient(circle at 36% 34%, rgba(255, 244, 223, 0.55), transparent 18%),
-    radial-gradient(circle at 50% 45%, rgba(254, 235, 202, 0.96), rgba(183, 137, 91, 0.96) 78%);
   box-shadow:
-    inset 0 0 0 10px rgba(32, 22, 17, 0.94),
+    inset 0 0 0 6px rgba(32, 22, 17, 0.7),
     0 10px 16px rgba(0, 0, 0, 0.14);
 }
 
@@ -1403,77 +1407,89 @@ body[data-haunt-level="Attached"] #invite-link {
   opacity: 0.9;
 }
 
-.board-portrait-left {
+/* Sun medallion: a ring of rays behind a smiling face, in the corner
+   above YES - the classic talking-board sun/moon pairing. */
+.board-portrait-sun {
   left: 4%;
-}
-
-.board-portrait-right {
-  right: 4%;
-}
-
-.portrait-aura,
-.portrait-face,
-.portrait-bust {
-  position: absolute;
-  pointer-events: none;
-}
-
-.portrait-aura {
-  inset: 11px;
-  border-radius: 50%;
-  opacity: 0.8;
-}
-
-.board-portrait-left .portrait-aura {
-  border: 2px solid rgba(38, 27, 19, 0.88);
-}
-
-.board-portrait-right .portrait-aura {
   background:
-    radial-gradient(circle at 62% 40%, transparent 18px, rgba(38, 27, 19, 0.92) 19px 20px, transparent 21px),
-    radial-gradient(circle at 45% 50%, rgba(38, 27, 19, 0.92) 0 28px, transparent 29px);
+    repeating-conic-gradient(rgba(43, 28, 19, 0.88) 0deg 8deg, transparent 8deg 22.5deg),
+    radial-gradient(circle at 50% 45%, rgba(254, 235, 202, 0.96), rgba(196, 150, 96, 0.95) 78%);
 }
 
-.portrait-face {
-  left: 50%;
-  top: 42%;
-  width: 20px;
-  height: 24px;
-  border-radius: 48% 48% 44% 44%;
-  transform: translate(-50%, -50%);
-  background: rgba(31, 21, 17, 0.92);
-  box-shadow:
-    -7px 0 0 -5px rgba(31, 21, 17, 0.9),
-    7px 0 0 -5px rgba(31, 21, 17, 0.9);
-}
-
-.portrait-face::before,
-.portrait-face::after {
-  content: "";
+.portrait-sun-face {
   position: absolute;
-  top: 7px;
-  width: 3px;
-  height: 3px;
+  inset: 12px;
   border-radius: 50%;
-  background: rgba(244, 231, 208, 0.82);
+  background:
+    radial-gradient(circle at 38% 32%, rgba(255, 244, 223, 0.6), transparent 32%),
+    radial-gradient(circle at 50% 48%, rgba(254, 235, 202, 0.98), rgba(196, 150, 96, 0.96) 82%);
 }
 
-.portrait-face::before {
-  left: 5px;
+.portrait-sun-eye {
+  position: absolute;
+  top: 38%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(31, 21, 17, 0.9);
 }
 
-.portrait-face::after {
-  right: 5px;
+.portrait-sun-eye-left {
+  left: 30%;
 }
 
-.portrait-bust {
+.portrait-sun-eye-right {
+  right: 30%;
+}
+
+.portrait-sun-mouth {
+  position: absolute;
   left: 50%;
-  bottom: 14px;
-  width: 30px;
-  height: 18px;
+  bottom: 24%;
+  width: 42%;
+  height: 24%;
   transform: translateX(-50%);
-  border-radius: 50% 50% 40% 40%;
-  background: rgba(31, 21, 17, 0.92);
+  border-bottom: 2px solid rgba(31, 21, 17, 0.82);
+  border-radius: 50%;
+}
+
+/* Moon medallion: a light crescent (a circle with a same-color-as-
+   background circle offset on top of it, clipped by the frame) plus a
+   small star, against a night-dark face. */
+.board-portrait-moon {
+  right: 4%;
+  background: radial-gradient(circle at 50% 50%, #2a1d15 0%, #140d09 82%);
+}
+
+.portrait-moon-face {
+  position: absolute;
+  inset: 9px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: rgba(232, 214, 178, 0.94);
+}
+
+.portrait-moon-bite {
+  position: absolute;
+  top: -16%;
+  left: -34%;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #140d09;
+}
+
+.portrait-moon-star {
+  position: absolute;
+  left: 30%;
+  top: 26%;
+  width: 7px;
+  height: 7px;
+  background: rgba(232, 214, 178, 0.88);
+  clip-path: polygon(
+    50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%,
+    50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%
+  );
 }
 
 .board-ghost {
@@ -2221,11 +2237,11 @@ button:disabled {
     width: 60px;
   }
 
-  .board-portrait-left {
+  .board-portrait-sun {
     left: 12px;
   }
 
-  .board-portrait-right {
+  .board-portrait-moon {
     right: 12px;
   }
 
@@ -2360,22 +2376,27 @@ button:disabled {
     inset: -7px;
   }
 
-  .portrait-face {
-    width: 14px;
-    height: 18px;
+  .portrait-sun-face {
+    inset: 8px;
   }
 
-  .portrait-face::before,
-  .portrait-face::after {
-    top: 5px;
-    width: 2px;
-    height: 2px;
+  .portrait-sun-eye {
+    width: 3px;
+    height: 3px;
   }
 
-  .portrait-bust {
-    width: 22px;
-    height: 14px;
-    bottom: 10px;
+  .portrait-moon-face {
+    inset: 6px;
+  }
+
+  .portrait-moon-bite {
+    top: -14%;
+    left: -30%;
+  }
+
+  .portrait-moon-star {
+    width: 5px;
+    height: 5px;
   }
 
   .board-ghost {

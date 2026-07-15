@@ -4,9 +4,20 @@ A small multiplayer Ouija-style browser game built with Node, Express, and Socke
 
 ## Version
 
-- Current version: `2.0.3`
+- Current version: `2.0.4`
 - Created by `Piraticy`
 - Source: [github.com/Piraticy/OuijaGame](https://github.com/Piraticy/OuijaGame)
+
+## What's New In 2.0.4
+
+- Both letter rows now curve the same direction (two nested arcs peaking in the middle) instead of
+  mirroring into a lens/eye shape, matching a real talking board
+- Redesigned the corner medallions as an actual sun (with a face) and crescent moon (with a star),
+  and added the "Mystifying Oracle" subtitle under the board's title
+- Darkened the board's wood tone toward the aged, weathered look of an antique board
+- The app now checks for and applies updates automatically (on focus, on visibility change, and
+  hourly) instead of only whenever the browser happens to notice on its own, so a long-lived open
+  tab can't get stuck on a stale version indefinitely
 
 ## What's New In 2.0.3
 
