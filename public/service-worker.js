@@ -1,4 +1,4 @@
-const CACHE_NAME = "ouija-online-v2";
+const CACHE_NAME = "ouija-online-v3";
 const APP_SHELL = [
   "/",
   "/styles.css",
@@ -30,37 +30,29 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+// Network-first: the game ships frequent visual/behavior tweaks and needs a
+// live connection to play anyway, so always prefer the current version over
+// whatever happens to be cached. The cache is refreshed on every successful
+// load and only used as an offline fallback - unlike the old cache-first
+// approach, which silently kept serving whatever was cached at install time
+// forever, until CACHE_NAME was bumped by hand on a deploy.
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") {
     return;
   }
 
-  if (event.request.mode === "navigate") {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match("/"))
-    );
-    return;
-  }
+  const isNavigation = event.request.mode === "navigate";
 
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) {
-        return cached;
-      }
-
-      return fetch(event.request).then((response) => {
-        if (!response || response.status !== 200 || response.type !== "basic") {
-          return response;
+    fetch(event.request)
+      .then((response) => {
+        if (response && response.status === 200 && response.type === "basic") {
+          const cloned = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, cloned));
         }
 
-        const cloned = response.clone();
-
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, cloned);
-        });
-
         return response;
-      });
-    })
+      })
+      .catch(() => caches.match(event.request).then((cached) => cached || (isNavigation ? caches.match("/") : undefined)))
   );
 });
