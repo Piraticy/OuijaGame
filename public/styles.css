@@ -1264,12 +1264,13 @@ body[data-haunt-level="Attached"] #invite-link {
 .letters {
   display: grid;
   grid-template-columns: repeat(13, minmax(0, 1fr));
+  column-gap: 13px;
   align-items: center;
   justify-items: center;
   left: 50%;
   width: 92%;
   transform: translateX(-50%);
-  font-size: clamp(2.35rem, 3.05vw, 3.3rem);
+  font-size: clamp(2.15rem, 2.8vw, 3.05rem);
   font-weight: 700;
   line-height: 1;
 }
@@ -1311,37 +1312,41 @@ body[data-haunt-level="Attached"] #invite-link {
   transform-origin: center center;
 }
 
-.letters-top span:nth-child(1) { transform: translateY(24px) rotate(-19deg); }
-.letters-top span:nth-child(2) { transform: translateY(18px) rotate(-15deg); }
-.letters-top span:nth-child(3) { transform: translateY(13px) rotate(-12deg); }
-.letters-top span:nth-child(4) { transform: translateY(8px) rotate(-9deg); }
-.letters-top span:nth-child(5) { transform: translateY(5px) rotate(-6deg); }
-.letters-top span:nth-child(6) { transform: translateY(2px) rotate(-3deg); }
+/* Rotation is kept modest on purpose: rotating a glyph widens its
+   effective bounding box, and combined with the larger letter size this
+   used to push edge letters (L/M, N/O, W/X) into their neighbor -
+   measured as actual negative gaps, not just a tight-looking curve. */
+.letters-top span:nth-child(1) { transform: translateY(24px) rotate(-10deg); }
+.letters-top span:nth-child(2) { transform: translateY(18px) rotate(-8deg); }
+.letters-top span:nth-child(3) { transform: translateY(13px) rotate(-6deg); }
+.letters-top span:nth-child(4) { transform: translateY(8px) rotate(-5deg); }
+.letters-top span:nth-child(5) { transform: translateY(5px) rotate(-3deg); }
+.letters-top span:nth-child(6) { transform: translateY(2px) rotate(-1deg); }
 .letters-top span:nth-child(7) { transform: translateY(0) rotate(0deg); }
-.letters-top span:nth-child(8) { transform: translateY(2px) rotate(3deg); }
-.letters-top span:nth-child(9) { transform: translateY(5px) rotate(6deg); }
-.letters-top span:nth-child(10) { transform: translateY(8px) rotate(9deg); }
-.letters-top span:nth-child(11) { transform: translateY(13px) rotate(12deg); }
-.letters-top span:nth-child(12) { transform: translateY(18px) rotate(15deg); }
-.letters-top span:nth-child(13) { transform: translateY(24px) rotate(19deg); }
+.letters-top span:nth-child(8) { transform: translateY(2px) rotate(1deg); }
+.letters-top span:nth-child(9) { transform: translateY(5px) rotate(3deg); }
+.letters-top span:nth-child(10) { transform: translateY(8px) rotate(5deg); }
+.letters-top span:nth-child(11) { transform: translateY(13px) rotate(6deg); }
+.letters-top span:nth-child(12) { transform: translateY(18px) rotate(8deg); }
+.letters-top span:nth-child(13) { transform: translateY(24px) rotate(10deg); }
 
 /* Real talking boards curve both letter rows the SAME direction - two
    nested arcs peaking in the middle, not a mirrored top/bottom lens shape.
    Rotation already matched that (negative left, positive right); only the
    vertical sag was backwards, sinking the middle instead of the edges. */
-.letters-bottom span:nth-child(1) { transform: translateY(22px) rotate(-17deg); }
-.letters-bottom span:nth-child(2) { transform: translateY(18px) rotate(-13deg); }
-.letters-bottom span:nth-child(3) { transform: translateY(14px) rotate(-10deg); }
-.letters-bottom span:nth-child(4) { transform: translateY(11px) rotate(-7deg); }
-.letters-bottom span:nth-child(5) { transform: translateY(8px) rotate(-5deg); }
-.letters-bottom span:nth-child(6) { transform: translateY(6px) rotate(-2deg); }
+.letters-bottom span:nth-child(1) { transform: translateY(22px) rotate(-7deg); }
+.letters-bottom span:nth-child(2) { transform: translateY(18px) rotate(-6deg); }
+.letters-bottom span:nth-child(3) { transform: translateY(14px) rotate(-5deg); }
+.letters-bottom span:nth-child(4) { transform: translateY(11px) rotate(-4deg); }
+.letters-bottom span:nth-child(5) { transform: translateY(8px) rotate(-2deg); }
+.letters-bottom span:nth-child(6) { transform: translateY(6px) rotate(-1deg); }
 .letters-bottom span:nth-child(7) { transform: translateY(5px) rotate(0deg); }
-.letters-bottom span:nth-child(8) { transform: translateY(6px) rotate(2deg); }
-.letters-bottom span:nth-child(9) { transform: translateY(8px) rotate(5deg); }
-.letters-bottom span:nth-child(10) { transform: translateY(11px) rotate(7deg); }
-.letters-bottom span:nth-child(11) { transform: translateY(14px) rotate(10deg); }
-.letters-bottom span:nth-child(12) { transform: translateY(18px) rotate(13deg); }
-.letters-bottom span:nth-child(13) { transform: translateY(22px) rotate(17deg); }
+.letters-bottom span:nth-child(8) { transform: translateY(6px) rotate(1deg); }
+.letters-bottom span:nth-child(9) { transform: translateY(8px) rotate(2deg); }
+.letters-bottom span:nth-child(10) { transform: translateY(11px) rotate(4deg); }
+.letters-bottom span:nth-child(11) { transform: translateY(14px) rotate(5deg); }
+.letters-bottom span:nth-child(12) { transform: translateY(18px) rotate(6deg); }
+.letters-bottom span:nth-child(13) { transform: translateY(22px) rotate(7deg); }
 
 .numbers span:nth-child(1) { transform: translateY(12px) rotate(-10deg); }
 .numbers span:nth-child(2) { transform: translateY(9px) rotate(-7deg); }

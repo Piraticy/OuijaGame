@@ -4,9 +4,17 @@ A small multiplayer Ouija-style browser game built with Node, Express, and Socke
 
 ## Version
 
-- Current version: `2.0.4`
+- Current version: `2.0.5`
 - Created by `Piraticy`
 - Source: [github.com/Piraticy/OuijaGame](https://github.com/Piraticy/OuijaGame)
+
+## What's New In 2.0.5
+
+- Fixed real letter-to-letter overlap on the board (N/O and a few other edge pairs could visibly
+  touch or overlap) - rotating a bigger glyph widens its effective footprint, and the previous
+  size increase combined with the arc's rotation pushed edge letters into their neighbors. Eased
+  the rotation, added column spacing, and trimmed the size slightly to guarantee real clearance,
+  not just a tight-looking curve, at every screen size from phone to a 2000px-wide desktop
 
 ## What's New In 2.0.4
 
