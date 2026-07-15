@@ -879,8 +879,35 @@ async function registerServiceWorker() {
     return;
   }
 
+  // A service worker only checks for updates when the browser triggers a
+  // navigation, so a tab or installed app that's simply left open (or
+  // backgrounded and resumed, never fully closed) can sit on a stale
+  // version indefinitely - the room code staying the same across visits
+  // is the tell. Reloading once a new version actually takes control (not
+  // just once it's found) closes that gap without depending on anyone
+  // remembering to close and reopen the app.
+  let hasReloadedForUpdate = false;
+
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (hasReloadedForUpdate) {
+      return;
+    }
+
+    hasReloadedForUpdate = true;
+    window.location.reload();
+  });
+
   try {
-    await navigator.serviceWorker.register("/service-worker.js");
+    const registration = await navigator.serviceWorker.register("/service-worker.js");
+    const checkForUpdate = () => registration.update().catch(() => {});
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) {
+        checkForUpdate();
+      }
+    });
+    window.addEventListener("focus", checkForUpdate);
+    window.setInterval(checkForUpdate, 30 * 60 * 1000);
   } catch (_error) {
     setStatus("Offline install features could not be fully registered in this browser.", true);
   }
