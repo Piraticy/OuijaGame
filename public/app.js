@@ -1,33 +1,5 @@
 const socket = io();
 
-function createBoardTargets() {
-  const targets = {
-    YES: { x: 12, y: 20.5 },
-    NO: { x: 88, y: 20.5 },
-    HELLO: { x: 22, y: 94 },
-    GOODBYE: { x: 78, y: 94 }
-  };
-
-  const addRow = (tokens, startX, endX, yValues) => {
-    const step = (endX - startX) / Math.max(tokens.length - 1, 1);
-
-    tokens.forEach((token, index) => {
-      targets[token] = {
-        x: Number((startX + (step * index)).toFixed(2)),
-        y: Array.isArray(yValues) ? yValues[index] : yValues
-      };
-    });
-  };
-
-  addRow("ABCDEFGHIJKLM".split(""), 16, 84, [43.4, 40.9, 38.8, 37.1, 35.8, 35, 34.7, 35, 35.8, 37.1, 38.8, 40.9, 43.4]);
-  addRow("NOPQRSTUVWXYZ".split(""), 16, 84, [54.8, 56.6, 58.2, 59.5, 60.5, 61.1, 61.3, 61.1, 60.5, 59.5, 58.2, 56.6, 54.8]);
-  addRow("1234567890".split(""), 26, 74, [73.2, 72.8, 72.4, 72.1, 71.9, 71.9, 72.1, 72.4, 72.8, 73.2]);
-
-  return targets;
-}
-
-const BOARD_TARGETS = createBoardTargets();
-
 const joinForm = document.getElementById("join-form");
 const questionForm = document.getElementById("question-form");
 const nameInput = document.getElementById("name-input");
@@ -65,6 +37,50 @@ const welcomeFlashElement = document.getElementById("welcome-flash");
 const welcomeStrobeElement = document.getElementById("welcome-strobe");
 const welcomeOmenElement = document.getElementById("welcome-omen");
 const welcomePlanchetteShadowElement = document.getElementById("welcome-planchette-shadow");
+
+// The planchette must land exactly on the letter it is "spelling," or the
+// illusion breaks. Rather than hand-guessing coordinates that drift out of
+// sync with the board's CSS (arc amplitude, responsive breakpoints, font
+// metrics), measure where each glyph actually renders and derive targets
+// from that. This is recomputed after fonts finish loading and on resize.
+let BOARD_TARGETS = {};
+
+function measureBoardTargets() {
+  const boardRect = boardElement.getBoundingClientRect();
+
+  if (!boardRect.width || !boardRect.height) {
+    return {};
+  }
+
+  const targets = {};
+
+  document
+    .querySelectorAll(".board-top span, .board-bottom span, .letters span, .numbers span")
+    .forEach((span) => {
+      const key = span.textContent.trim().toUpperCase();
+
+      if (!key) {
+        return;
+      }
+
+      const rect = span.getBoundingClientRect();
+
+      targets[key] = {
+        x: Number((((rect.left + rect.right) / 2 - boardRect.left) / boardRect.width * 100).toFixed(2)),
+        y: Number((((rect.top + rect.bottom) / 2 - boardRect.top) / boardRect.height * 100).toFixed(2))
+      };
+    });
+
+  return targets;
+}
+
+function refreshBoardTargets() {
+  const measured = measureBoardTargets();
+
+  if (Object.keys(measured).length) {
+    BOARD_TARGETS = measured;
+  }
+}
 
 const NAME_STORAGE_KEY = "ouija-online-name";
 const LOCAL_VEIL_VISITS_KEY = "ouija-online-veil-visits";
@@ -170,6 +186,11 @@ const SOUND_PROFILES = [
   }
 ];
 const RESTING_CURSOR = { x: 50, y: 72 };
+// Wide enough to cover every real glyph position measured off the board
+// (YES/NO near the top, GOODBYE/HELLO near the very bottom edge), so the
+// planchette can actually reach what it is spelling instead of stopping short.
+const BOARD_X_RANGE = [6, 94];
+const BOARD_Y_RANGE = [10, 95];
 
 let currentRoomId = "";
 let desiredRoomId = "";
@@ -790,7 +811,7 @@ function updateInstallUi() {
   installAppButton.disabled = false;
 
   if (deferredInstallPrompt) {
-    installStatusElement.textContent = "Install on this device for a full-screen board and faster relaunch.";
+    installStatusElement.textContent = "Full-screen board, faster relaunch.";
     installAppButton.textContent = "Install";
     setInstallHelp();
     return;
@@ -798,19 +819,19 @@ function updateInstallUi() {
 
   if (isIosDevice()) {
     if (isSafariBrowser()) {
-      installStatusElement.textContent = "On iPhone or iPad, install works from Safari with Add to Home Screen.";
+      installStatusElement.textContent = "Install from Safari's Share menu.";
       installAppButton.textContent = "Show Steps";
       setInstallHelp("1. Tap Share in Safari.\n2. Choose Add to Home Screen.\n3. If shown, keep Open as Web App on.");
       return;
     }
 
-    installStatusElement.textContent = "On iPhone, install only works from Safari, not Firefox or Chrome.";
+    installStatusElement.textContent = "iPhone install needs Safari.";
     installAppButton.textContent = "Safari Only";
     setInstallHelp("Open this same link in Safari, then use Share > Add to Home Screen.");
     return;
   }
 
-  installStatusElement.textContent = "Install is available in supported browsers once the app is recognized as installable.";
+  installStatusElement.textContent = "Install support varies by browser.";
   installAppButton.textContent = "Install";
   setInstallHelp();
 }
@@ -1369,8 +1390,8 @@ function renderHistory(entries) {
 
 function updatePlanchette(cursor) {
   const safeCursor = {
-    x: Math.max(10, Math.min(90, Number(cursor?.x ?? RESTING_CURSOR.x))),
-    y: Math.max(10, Math.min(88, Number(cursor?.y ?? RESTING_CURSOR.y)))
+    x: Math.max(BOARD_X_RANGE[0], Math.min(BOARD_X_RANGE[1], Number(cursor?.x ?? RESTING_CURSOR.x))),
+    y: Math.max(BOARD_Y_RANGE[0], Math.min(BOARD_Y_RANGE[1], Number(cursor?.y ?? RESTING_CURSOR.y)))
   };
 
   latestCursor = safeCursor;
@@ -1420,8 +1441,8 @@ function toBoardPercentages(clientX, clientY) {
   const y = ((clientY - rect.top) / rect.height) * 100;
 
   return {
-    x: Math.max(10, Math.min(90, x)),
-    y: Math.max(10, Math.min(88, y))
+    x: Math.max(BOARD_X_RANGE[0], Math.min(BOARD_X_RANGE[1], x)),
+    y: Math.max(BOARD_Y_RANGE[0], Math.min(BOARD_Y_RANGE[1], y))
   };
 }
 
@@ -1945,4 +1966,16 @@ updateInviteLink(roomInput.value);
 updateSpiritUi(currentSpiritState);
 updateInstallUi();
 registerServiceWorker();
+refreshBoardTargets();
 updatePlanchette(latestCursor);
+
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(refreshBoardTargets).catch(() => {});
+}
+
+let boardResizeTimer = null;
+
+window.addEventListener("resize", () => {
+  window.clearTimeout(boardResizeTimer);
+  boardResizeTimer = window.setTimeout(refreshBoardTargets, 150);
+});

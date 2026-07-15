@@ -84,33 +84,16 @@ const upsertWordStmt = db.prepare(`
     updated_at = excluded.updated_at
 `);
 
-function createBoardTargets() {
-  const targets = {
-    YES: { x: 12, y: 20.5 },
-    NO: { x: 88, y: 20.5 },
-    HELLO: { x: 22, y: 94 },
-    GOODBYE: { x: 78, y: 94 }
-  };
-
-  const addRow = (tokens, startX, endX, yValues) => {
-    const step = (endX - startX) / Math.max(tokens.length - 1, 1);
-
-    tokens.forEach((token, index) => {
-      targets[token] = {
-        x: Number((startX + (step * index)).toFixed(2)),
-        y: Array.isArray(yValues) ? yValues[index] : yValues
-      };
-    });
-  };
-
-  addRow("ABCDEFGHIJKLM".split(""), 16, 84, [47, 44.8, 42.9, 41.3, 40.1, 39.3, 39, 39.3, 40.1, 41.3, 42.9, 44.8, 47]);
-  addRow("NOPQRSTUVWXYZ".split(""), 16, 84, [58.5, 60.2, 61.8, 63.1, 64.1, 64.7, 64.9, 64.7, 64.1, 63.1, 61.8, 60.2, 58.5]);
-  addRow("1234567890".split(""), 26, 74, [76.8, 76.3, 75.9, 75.6, 75.4, 75.4, 75.6, 75.9, 76.3, 76.8]);
-
-  return targets;
-}
-
-const BOARD_TARGETS = createBoardTargets();
+// Board layout (letter/number coordinates) lives client-side in public/app.js,
+// which positions the planchette. The server only needs to know which tokens
+// exist on the board, to validate and tokenize spirit answers.
+const BOARD_TOKENS = new Set([
+  ...("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split("")),
+  "YES",
+  "NO",
+  "HELLO",
+  "GOODBYE"
+]);
 const SPIRIT_REST_CURSOR = { x: 50, y: 72 };
 
 const RESPONSE_LIBRARY = {
@@ -277,6 +260,7 @@ const QUESTION_STOP_WORDS = new Set([
   "that",
   "the",
   "there",
+  "here",
   "now",
   "feel",
   "feeling",
@@ -298,6 +282,122 @@ const QUESTION_STOP_WORDS = new Set([
   "would",
   "you",
   "your"
+]);
+
+// Common verbs/modals/fillers that show up in questions but are never the
+// thing being asked about. Excluding them keeps the "subject" extraction
+// aimed at the actual noun (e.g. "house", "mother") instead of grabbing a
+// verb (e.g. "choose", "know") and stitching it into a template, which is
+// what produced nonsense like "CHOOSE CALLED ME" or "ASK KNOW NOT ME".
+const QUESTION_FILLER_WORDS = new Set([
+  "know",
+  "knew",
+  "want",
+  "wanted",
+  "need",
+  "needed",
+  "choose",
+  "chose",
+  "chosen",
+  "happen",
+  "happened",
+  "happens",
+  "say",
+  "said",
+  "ask",
+  "asked",
+  "think",
+  "thought",
+  "believe",
+  "believed",
+  "remember",
+  "forget",
+  "forgot",
+  "guess",
+  "matter",
+  "mattered",
+  "care",
+  "cared",
+  "see",
+  "saw",
+  "seen",
+  "come",
+  "came",
+  "coming",
+  "go",
+  "went",
+  "going",
+  "get",
+  "got",
+  "getting",
+  "give",
+  "gave",
+  "given",
+  "take",
+  "took",
+  "taken",
+  "make",
+  "made",
+  "keep",
+  "kept",
+  "let",
+  "put",
+  "show",
+  "showed",
+  "stand",
+  "standing",
+  "stood",
+  "leave",
+  "left",
+  "leaving",
+  "like",
+  "love",
+  "hate",
+  "hear",
+  "heard",
+  "look",
+  "looked",
+  "looking",
+  "wish",
+  "hope",
+  "hoped",
+  "pass",
+  "passed",
+  "move",
+  "moved",
+  "moving",
+  "secret",
+  "something",
+  "someone",
+  "anything",
+  "anyone",
+  "please",
+  // Prepositions: never the thing being asked about, and some (like "under")
+  // are template words elsewhere, so picking them as the subject is circular.
+  "behind",
+  "under",
+  "above",
+  "around",
+  "near",
+  "beside",
+  "inside",
+  "outside",
+  "beneath",
+  "front",
+  "back",
+  // Emotion/safety words already drive their own response category (see
+  // asksSafety, asksFeeling) - reusing one as the template's noun produces
+  // phrases like "LEAVE SCARED" instead of a real answer.
+  "scared",
+  "afraid",
+  "danger",
+  "dangerous",
+  "safe",
+  "hurt",
+  "hurting",
+  "run",
+  "running",
+  "help"
 ]);
 
 function createRoomState(roomId) {
@@ -389,6 +489,12 @@ function sanitizeName(name) {
   return String(name || "Guest")
     .trim()
     .slice(0, 18) || "Guest";
+}
+
+// "Guest" is the default placeholder name, not a real identity: many unrelated
+// players share it, so the haunting engine should not pretend to recognize it.
+function isAnonymousName(name) {
+  return name.toLowerCase() === "guest";
 }
 
 function sanitizeRoomId(roomId) {
@@ -643,14 +749,14 @@ function tokenizeAnswer(answer) {
     .toUpperCase()
     .split(/\s+/)
     .flatMap((word) => {
-      if (BOARD_TARGETS[word]) {
+      if (BOARD_TOKENS.has(word)) {
         return [word];
       }
 
       return word
         .replace(/[^A-Z0-9]/g, "")
         .split("")
-        .filter((token) => BOARD_TARGETS[token]);
+        .filter((token) => BOARD_TOKENS.has(token));
     })
     .slice(0, 18);
 }
@@ -682,10 +788,14 @@ function extractQuestionProfile(question) {
 
   const subjects = words
     .filter((word) => word.length > 2)
-    .filter((word) => !QUESTION_STOP_WORDS.has(word));
+    .filter((word) => !QUESTION_STOP_WORDS.has(word))
+    .filter((word) => !QUESTION_FILLER_WORDS.has(word));
 
-  const primaryWord = toBoardWord(subjects[0]);
-  const secondaryWord = toBoardWord(subjects[1]);
+  // The meaningful noun in a question usually trails the verb ("did you
+  // choose this HOUSE", "do you know my MOTHER"), so anchor on the last
+  // surviving content word rather than the first.
+  const primaryWord = toBoardWord(subjects[subjects.length - 1]);
+  const secondaryWord = toBoardWord(subjects[subjects.length - 2]);
 
   return {
     words,
@@ -725,7 +835,18 @@ function extractQuestionProfile(question) {
     mentionsPerson: /\bmother|father|mom|dad|sister|brother|friend|girl|boy|man|woman|child|name\b/.test(
       lowerQuestion
     ),
-    asksSafety: /\bhelp|safe|scared|afraid|danger|leave|run\b/.test(lowerQuestion),
+    // "leave" is ambiguous: "should I leave" is a safety question, but
+    // "when will you leave" is asking about the spirit's own departure.
+    // Check the departure phrasing first so it doesn't get misread as a
+    // warning request.
+    asksSpiritDeparture: /\b(when will you leave|when will you go|are you leaving|will you go|when do you go)\b/.test(
+      lowerQuestion
+    ),
+    asksSecret: /\b(tell me a secret|a secret|hidden truth|something no one knows|something you know)\b/.test(
+      lowerQuestion
+    ),
+    asksSafety: /\bhelp|safe|scared|afraid|danger|run\b/.test(lowerQuestion) ||
+      (/\bleave\b/.test(lowerQuestion) && !/\byou leave|you go|will you\b/.test(lowerQuestion)),
     asksTime: /\bwhen|time|night|midnight|hour|clock\b/.test(lowerQuestion),
     asksYear: /\b(year|date|what year|which year)\b/.test(lowerQuestion),
     asksIdentity: /\bwho|name|what are you\b/.test(lowerQuestion),
@@ -965,6 +1086,26 @@ function createIntentResponse(room, profile, roomWord) {
   ]);
 }
 
+function createDepartureResponse(room) {
+  return chooseWeighted([
+    ["NOT YET", 6],
+    ["WHEN THE CANDLE DIES", 4],
+    ["SOON", 4],
+    ["WHEN YOU SAY GOODBYE", 3],
+    [chooseMoodLine(room, "default"), 2]
+  ]);
+}
+
+function createSecretResponse(room) {
+  return chooseWeighted([
+    ["SOME SECRETS STAY", 6],
+    ["YOU DO NOT WANT TO KNOW", 5],
+    ["NOT YET", 4],
+    ["ASK SOFTER", 3],
+    [chooseMoodLine(room, "default"), 2]
+  ]);
+}
+
 function createTemperResponse(room) {
   return chooseWeighted([
     ["YES", 3],
@@ -997,7 +1138,7 @@ function createHungerResponse(room, askedBy, roomWord) {
     );
   }
 
-  if (seenCount > 1) {
+  if (seenCount > 1 && !isAnonymousName(safeName)) {
     weightedAnswers.push(
       [buildPhrase("I KNOW", safeName), 3],
       ["YOUR NAME LINGERS", 3]
@@ -1065,7 +1206,7 @@ function createRememberMeResponse(room, askedBy) {
   const safeName = sanitizeName(askedBy);
   const seenCount = haunting.seenNames.get(safeName) || 0;
 
-  if (seenCount > 1) {
+  if (seenCount > 1 && !isAnonymousName(safeName)) {
     return chooseWeighted([
       [buildPhrase("YES", safeName), 7],
       [buildPhrase("I KNOW", safeName), 6],
@@ -1089,6 +1230,14 @@ function createReturningRoomResponse(room, askedBy) {
     return null;
   }
 
+  if (isAnonymousName(safeName)) {
+    return chooseWeighted([
+      ["THIS ROOM REMEMBERS", 6],
+      ["I WAITED HERE", 5],
+      ["SOMEONE CAME BACK", 3]
+    ]);
+  }
+
   return chooseWeighted([
     [buildPhrase("YOU CAME BACK", safeName), 6],
     ["THIS ROOM REMEMBERS", 5],
@@ -1102,7 +1251,7 @@ function createNamedPresenceResponse(room, askedBy) {
   const safeName = sanitizeName(askedBy);
   const seenCount = haunting.seenNames.get(safeName) || 0;
 
-  if (seenCount < 1) {
+  if (seenCount < 1 || isAnonymousName(safeName)) {
     return null;
   }
 
@@ -1211,12 +1360,16 @@ function createSpiritResponse(room, askedBy, question) {
   const roomWord = detectRoomWord(question) || "";
   const questionKey = normalizeQuestionKey(question);
   const memoryAnswer = createMemoryResponse(room, askedBy, profile, roomWord, questionKey);
-  let answer = chooseRandom(RESPONSE_LIBRARY.default);
+  let answer;
 
   if (memoryAnswer) {
     answer = memoryAnswer;
   } else if (profile.asksDirectPresence) {
     answer = createNamedPresenceResponse(room, askedBy) || createPresenceResponse(room, profile, roomWord);
+  } else if (profile.asksSpiritDeparture) {
+    answer = createDepartureResponse(room);
+  } else if (profile.asksSecret) {
+    answer = createSecretResponse(room);
   } else if (profile.asksRelationship) {
     answer = createRelationshipResponse(room);
   } else if (profile.asksName) {
@@ -1496,8 +1649,8 @@ io.on("connection", (socket) => {
     }
 
     room.cursor = {
-      x: clamp(Number(x) || 0, 10, 90),
-      y: clamp(Number(y) || 0, 10, 88)
+      x: clamp(Number(x) || 0, 6, 94),
+      y: clamp(Number(y) || 0, 10, 95)
     };
 
     noteRoomInteraction(room);
