@@ -945,8 +945,8 @@ button:hover {
     radial-gradient(circle at 28% 70%, rgba(108, 68, 40, 0.12) 0 1%, transparent 1.1% 100%),
     radial-gradient(circle at 72% 66%, rgba(108, 68, 40, 0.12) 0 0.9%, transparent 1% 100%),
     repeating-radial-gradient(circle at 50% 52%, rgba(125, 86, 54, 0.06) 0 2px, transparent 2px 26px),
-    linear-gradient(180deg, rgba(255, 246, 223, 0.44), rgba(246, 214, 170, 0.16) 18%, rgba(78, 42, 18, 0.18) 100%),
-    linear-gradient(135deg, #e2c39a 0%, #cc9c66 52%, #8d5c34 100%);
+    linear-gradient(180deg, rgba(255, 246, 223, 0.34), rgba(246, 214, 170, 0.12) 18%, rgba(60, 30, 12, 0.26) 100%),
+    linear-gradient(135deg, #cbaa78 0%, #b3844f 52%, #6b431f 100%);
   box-shadow:
     inset 0 1px 0 rgba(255, 247, 225, 0.5),
     inset 0 -24px 42px rgba(54, 29, 15, 0.28),
@@ -1279,7 +1279,7 @@ body[data-haunt-level="Attached"] #invite-link {
 }
 
 .letters-bottom {
-  top: 48.8%;
+  top: 49.8%;
 }
 
 .numbers {
@@ -1325,19 +1325,23 @@ body[data-haunt-level="Attached"] #invite-link {
 .letters-top span:nth-child(12) { transform: translateY(18px) rotate(15deg); }
 .letters-top span:nth-child(13) { transform: translateY(24px) rotate(19deg); }
 
-.letters-bottom span:nth-child(1) { transform: translateY(5px) rotate(-17deg); }
-.letters-bottom span:nth-child(2) { transform: translateY(9px) rotate(-13deg); }
-.letters-bottom span:nth-child(3) { transform: translateY(13px) rotate(-10deg); }
-.letters-bottom span:nth-child(4) { transform: translateY(16px) rotate(-7deg); }
-.letters-bottom span:nth-child(5) { transform: translateY(19px) rotate(-5deg); }
-.letters-bottom span:nth-child(6) { transform: translateY(21px) rotate(-2deg); }
-.letters-bottom span:nth-child(7) { transform: translateY(22px) rotate(0deg); }
-.letters-bottom span:nth-child(8) { transform: translateY(21px) rotate(2deg); }
-.letters-bottom span:nth-child(9) { transform: translateY(19px) rotate(5deg); }
-.letters-bottom span:nth-child(10) { transform: translateY(16px) rotate(7deg); }
-.letters-bottom span:nth-child(11) { transform: translateY(13px) rotate(10deg); }
-.letters-bottom span:nth-child(12) { transform: translateY(9px) rotate(13deg); }
-.letters-bottom span:nth-child(13) { transform: translateY(5px) rotate(17deg); }
+/* Real talking boards curve both letter rows the SAME direction - two
+   nested arcs peaking in the middle, not a mirrored top/bottom lens shape.
+   Rotation already matched that (negative left, positive right); only the
+   vertical sag was backwards, sinking the middle instead of the edges. */
+.letters-bottom span:nth-child(1) { transform: translateY(22px) rotate(-17deg); }
+.letters-bottom span:nth-child(2) { transform: translateY(18px) rotate(-13deg); }
+.letters-bottom span:nth-child(3) { transform: translateY(14px) rotate(-10deg); }
+.letters-bottom span:nth-child(4) { transform: translateY(11px) rotate(-7deg); }
+.letters-bottom span:nth-child(5) { transform: translateY(8px) rotate(-5deg); }
+.letters-bottom span:nth-child(6) { transform: translateY(6px) rotate(-2deg); }
+.letters-bottom span:nth-child(7) { transform: translateY(5px) rotate(0deg); }
+.letters-bottom span:nth-child(8) { transform: translateY(6px) rotate(2deg); }
+.letters-bottom span:nth-child(9) { transform: translateY(8px) rotate(5deg); }
+.letters-bottom span:nth-child(10) { transform: translateY(11px) rotate(7deg); }
+.letters-bottom span:nth-child(11) { transform: translateY(14px) rotate(10deg); }
+.letters-bottom span:nth-child(12) { transform: translateY(18px) rotate(13deg); }
+.letters-bottom span:nth-child(13) { transform: translateY(22px) rotate(17deg); }
 
 .numbers span:nth-child(1) { transform: translateY(12px) rotate(-10deg); }
 .numbers span:nth-child(2) { transform: translateY(9px) rotate(-7deg); }
@@ -2152,19 +2156,19 @@ button:disabled {
   .letters-top span:nth-child(12) { transform: translateY(7px) rotate(10deg); }
   .letters-top span:nth-child(13) { transform: translateY(10px) rotate(13deg); }
 
-  .letters-bottom span:nth-child(1) { transform: translateY(2px) rotate(-11deg); }
-  .letters-bottom span:nth-child(2) { transform: translateY(4px) rotate(-9deg); }
-  .letters-bottom span:nth-child(3) { transform: translateY(5px) rotate(-7deg); }
-  .letters-bottom span:nth-child(4) { transform: translateY(6px) rotate(-5deg); }
-  .letters-bottom span:nth-child(5) { transform: translateY(7px) rotate(-3deg); }
-  .letters-bottom span:nth-child(6) { transform: translateY(8px) rotate(-2deg); }
-  .letters-bottom span:nth-child(7) { transform: translateY(9px) rotate(0deg); }
-  .letters-bottom span:nth-child(8) { transform: translateY(8px) rotate(2deg); }
-  .letters-bottom span:nth-child(9) { transform: translateY(7px) rotate(3deg); }
-  .letters-bottom span:nth-child(10) { transform: translateY(6px) rotate(5deg); }
-  .letters-bottom span:nth-child(11) { transform: translateY(5px) rotate(7deg); }
-  .letters-bottom span:nth-child(12) { transform: translateY(4px) rotate(9deg); }
-  .letters-bottom span:nth-child(13) { transform: translateY(2px) rotate(11deg); }
+  .letters-bottom span:nth-child(1) { transform: translateY(9px) rotate(-11deg); }
+  .letters-bottom span:nth-child(2) { transform: translateY(7px) rotate(-9deg); }
+  .letters-bottom span:nth-child(3) { transform: translateY(6px) rotate(-7deg); }
+  .letters-bottom span:nth-child(4) { transform: translateY(5px) rotate(-5deg); }
+  .letters-bottom span:nth-child(5) { transform: translateY(4px) rotate(-3deg); }
+  .letters-bottom span:nth-child(6) { transform: translateY(3px) rotate(-2deg); }
+  .letters-bottom span:nth-child(7) { transform: translateY(2px) rotate(0deg); }
+  .letters-bottom span:nth-child(8) { transform: translateY(3px) rotate(2deg); }
+  .letters-bottom span:nth-child(9) { transform: translateY(4px) rotate(3deg); }
+  .letters-bottom span:nth-child(10) { transform: translateY(5px) rotate(5deg); }
+  .letters-bottom span:nth-child(11) { transform: translateY(6px) rotate(7deg); }
+  .letters-bottom span:nth-child(12) { transform: translateY(7px) rotate(9deg); }
+  .letters-bottom span:nth-child(13) { transform: translateY(9px) rotate(11deg); }
 
   .numbers span:nth-child(1) { transform: translateY(5px) rotate(-6deg); }
   .numbers span:nth-child(2) { transform: translateY(4px) rotate(-4deg); }
