@@ -50,6 +50,27 @@ Join a room by yourself and use `Summon` to enable the fictional solo presence. 
 
 Play online at [https://ouijagame.onrender.com](https://ouijagame.onrender.com).
 
+## Admin Dashboard
+
+A small dashboard at `/admin` shows how many players are online right now, which rooms are
+active, all-time session counts, and how many devices have installed the app as a PWA.
+
+It is disabled by default. To enable it, set an `ADMIN_PASSWORD` environment variable before
+starting the server:
+
+```
+ADMIN_PASSWORD=your-password npm start
+```
+
+Without `ADMIN_PASSWORD` set, `/admin` and its API return a plain 404, as if the route didn't
+exist. With it set, the browser will prompt for credentials (any username, that password) before
+showing the dashboard. Because those credentials are sent with Basic Auth, only use `/admin` over
+HTTPS in production (Render's `*.onrender.com` domains are HTTPS by default).
+
+Note: iOS Safari has no API to detect "Add to Home Screen," so install counts undercount iPhone
+and iPad installs — only Android/desktop browsers that support the standard PWA install prompt
+are reliably counted.
+
 ## Notes
 
 This is a playful paranormal party-game theme, not a real spirit board product.

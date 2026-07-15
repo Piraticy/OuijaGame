@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ouija Online — Admin</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <style>
+      :root {
+        --bg: #110d0b;
+        --panel: rgba(28, 19, 14, 0.88);
+        --panel-border: rgba(242, 212, 164, 0.14);
+        --ink: #f4e7d0;
+        --muted: #c7b495;
+        --accent: #f4bc5b;
+        --danger: #f7846c;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: linear-gradient(180deg, #1d1410 0%, #0c0908 100%);
+        color: var(--ink);
+      }
+
+      body {
+        padding: 24px;
+      }
+
+      .wrap {
+        max-width: 1080px;
+        margin: 0 auto;
+      }
+
+      header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.4rem;
+      }
+
+      .eyebrow {
+        margin: 0 0 4px;
+        color: var(--accent);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+      }
+
+      #last-updated {
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+
+      .stat-card {
+        border: 1px solid var(--panel-border);
+        border-radius: 16px;
+        background: var(--panel);
+        padding: 16px;
+      }
+
+      .stat-label {
+        margin: 0 0 6px;
+        color: var(--muted);
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .stat-value {
+        margin: 0;
+        font-size: 2rem;
+        font-weight: 700;
+      }
+
+      .stat-value.is-live {
+        color: var(--accent);
+      }
+
+      section {
+        border: 1px solid var(--panel-border);
+        border-radius: 16px;
+        background: var(--panel);
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+
+      section h2 {
+        margin: 0 0 12px;
+        font-size: 1rem;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.86rem;
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 8px 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        white-space: nowrap;
+      }
+
+      th {
+        color: var(--muted);
+        font-weight: 600;
+        font-size: 0.74rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      td.truncate {
+        max-width: 320px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .empty-row td {
+        color: var(--muted);
+        font-style: italic;
+      }
+
+      .table-scroll {
+        overflow-x: auto;
+      }
+
+      .error-banner {
+        border: 1px solid rgba(247, 132, 108, 0.4);
+        background: rgba(247, 132, 108, 0.1);
+        color: var(--danger);
+        border-radius: 12px;
+        padding: 10px 14px;
+        margin-bottom: 20px;
+        display: none;
+      }
+
+      .error-banner.is-visible {
+        display: block;
+      }
+
+      @media (max-width: 560px) {
+        body {
+          padding: 16px;
+        }
+
+        .stat-value {
+          font-size: 1.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <p class="eyebrow">Ouija Online</p>
+          <h1>Admin Dashboard</h1>
+        </div>
+        <p id="last-updated">Loading…</p>
+      </header>
+
+      <div id="error-banner" class="error-banner">Could not load stats.</div>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <p class="stat-label">Players Online Now</p>
+          <p id="stat-live-players" class="stat-value is-live">—</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">Active Rooms Now</p>
+          <p id="stat-active-rooms" class="stat-value is-live">—</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">Sessions, All Time</p>
+          <p id="stat-total-visits" class="stat-value">—</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">Rooms Ever Created</p>
+          <p id="stat-total-rooms" class="stat-value">—</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">Distinct Names Seen</p>
+          <p id="stat-distinct-names" class="stat-value">—</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">App Installs</p>
+          <p id="stat-installs" class="stat-value">—</p>
+        </div>
+      </div>
+
+      <section>
+        <h2>Active Rooms</h2>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Room</th>
+                <th>Players</th>
+                <th>Haunting Level</th>
+                <th>Mood</th>
+              </tr>
+            </thead>
+            <tbody id="rooms-body">
+              <tr class="empty-row">
+                <td colspan="4">Loading…</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>Recent Installs</h2>
+        <p style="color: var(--muted); font-size: 0.8rem; margin-top: -6px">
+          Tracked when a browser reports the PWA install prompt completed. iOS "Add to Home
+          Screen" cannot be detected by any browser API, so iPhone/iPad installs are undercounted
+          here.
+        </p>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Platform</th>
+                <th>User Agent</th>
+              </tr>
+            </thead>
+            <tbody id="installs-body">
+              <tr class="empty-row">
+                <td colspan="3">Loading…</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const lastUpdatedEl = document.getElementById("last-updated");
+      const errorBannerEl = document.getElementById("error-banner");
+      const roomsBodyEl = document.getElementById("rooms-body");
+      const installsBodyEl = document.getElementById("installs-body");
+
+      function setStat(id, value) {
+        document.getElementById(id).textContent = value;
+      }
+
+      function renderRooms(rooms) {
+        roomsBodyEl.innerHTML = "";
+
+        if (!rooms.length) {
+          roomsBodyEl.innerHTML = '<tr class="empty-row"><td colspan="4">No active rooms right now.</td></tr>';
+          return;
+        }
+
+        rooms.forEach((room) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${escapeHtml(room.roomId)}</td>
+            <td>${room.players}</td>
+            <td>${escapeHtml(room.hauntingLevel)}</td>
+            <td>${escapeHtml(room.mood)}</td>
+          `;
+          roomsBodyEl.appendChild(row);
+        });
+      }
+
+      function renderInstalls(installs) {
+        installsBodyEl.innerHTML = "";
+
+        if (!installs.length) {
+          installsBodyEl.innerHTML = '<tr class="empty-row"><td colspan="3">No installs recorded yet.</td></tr>';
+          return;
+        }
+
+        installs.forEach((entry) => {
+          const row = document.createElement("tr");
+          const when = new Date(entry.installed_at).toLocaleString();
+          row.innerHTML = `
+            <td>${escapeHtml(when)}</td>
+            <td>${escapeHtml(entry.platform || "—")}</td>
+            <td class="truncate" title="${escapeHtml(entry.user_agent || "")}">${escapeHtml(entry.user_agent || "—")}</td>
+          `;
+          installsBodyEl.appendChild(row);
+        });
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;"
+        })[char]);
+      }
+
+      async function loadStats() {
+        try {
+          const response = await fetch("/admin/api/stats", { cache: "no-store" });
+
+          if (!response.ok) {
+            throw new Error(`Request failed: ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          setStat("stat-live-players", data.live.livePlayers);
+          setStat("stat-active-rooms", data.live.activeRooms);
+          setStat("stat-total-visits", data.allTime.totalVisits);
+          setStat("stat-total-rooms", data.allTime.totalRooms);
+          setStat("stat-distinct-names", data.allTime.distinctNames);
+          setStat("stat-installs", data.allTime.installs);
+
+          renderRooms(data.live.rooms);
+          renderInstalls(data.recentInstalls);
+
+          errorBannerEl.classList.remove("is-visible");
+          lastUpdatedEl.textContent = `Updated ${new Date().toLocaleTimeString()}`;
+        } catch (error) {
+          errorBannerEl.classList.add("is-visible");
+          errorBannerEl.textContent = `Could not load stats: ${error.message}`;
+        }
+      }
+
+      loadStats();
+      setInterval(loadStats, 8000);
+    </script>
+  </body>
+</html>

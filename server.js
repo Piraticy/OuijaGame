@@ -9,10 +9,13 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+app.use(express.json({ limit: "8kb" }));
+
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "0.0.0.0";
 const DATA_DIR = path.join(__dirname, "data");
 const DB_PATH = path.join(DATA_DIR, "veil-memory.sqlite");
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
 
 const rooms = new Map();
 const hauntRegistry = new Map();
@@ -44,6 +47,12 @@ db.exec(`
     last_name TEXT,
     updated_at INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (room_id, word)
+  );
+  CREATE TABLE IF NOT EXISTS app_installs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    installed_at INTEGER NOT NULL,
+    user_agent TEXT,
+    platform TEXT
   );
 `);
 
@@ -83,6 +92,16 @@ const upsertWordStmt = db.prepare(`
     last_name = excluded.last_name,
     updated_at = excluded.updated_at
 `);
+const insertInstallStmt = db.prepare(
+  "INSERT INTO app_installs (installed_at, user_agent, platform) VALUES (?, ?, ?)"
+);
+const countInstallsStmt = db.prepare("SELECT COUNT(*) AS total FROM app_installs");
+const countRoomsStmt = db.prepare("SELECT COUNT(*) AS total FROM haunt_rooms");
+const sumVisitsStmt = db.prepare("SELECT COALESCE(SUM(visits), 0) AS total FROM haunt_rooms");
+const countNamesStmt = db.prepare("SELECT COUNT(DISTINCT name) AS total FROM haunt_names");
+const recentInstallsStmt = db.prepare(
+  "SELECT installed_at, user_agent, platform FROM app_installs ORDER BY installed_at DESC LIMIT 20"
+);
 
 // Board layout (letter/number coordinates) lives client-side in public/app.js,
 // which positions the planchette. The server only needs to know which tokens
@@ -1704,6 +1723,72 @@ io.on("connection", (socket) => {
 
 app.get("/status", (_req, res) => {
   res.status(200).json({ ok: true });
+});
+
+// Guards the admin dashboard. With no ADMIN_PASSWORD set, admin routes
+// pretend not to exist (404) rather than serving an unlocked panel by
+// default. Set ADMIN_PASSWORD in the environment to enable it, and only
+// use it over HTTPS since Basic Auth credentials are sent in the clear
+// otherwise.
+function requireAdminAuth(req, res, next) {
+  if (!ADMIN_PASSWORD) {
+    res.status(404).end();
+    return;
+  }
+
+  const [scheme, encoded] = String(req.headers.authorization || "").split(" ");
+  const decoded = scheme === "Basic" && encoded ? Buffer.from(encoded, "base64").toString("utf8") : "";
+  const password = decoded.slice(decoded.indexOf(":") + 1);
+
+  if (!encoded || password !== ADMIN_PASSWORD) {
+    res.set("WWW-Authenticate", 'Basic realm="Ouija Admin"');
+    res.status(401).end();
+    return;
+  }
+
+  next();
+}
+
+function getLiveStats() {
+  const activeRooms = Array.from(rooms.values())
+    .map((room) => ({
+      roomId: room.roomId,
+      players: room.players.size,
+      hauntingLevel: getHauntingLevel(room.roomId),
+      mood: room.spirit.mood
+    }))
+    .sort((a, b) => b.players - a.players);
+
+  return {
+    activeRooms: activeRooms.length,
+    livePlayers: activeRooms.reduce((sum, entry) => sum + entry.players, 0),
+    rooms: activeRooms
+  };
+}
+
+app.post("/api/install", (req, res) => {
+  const userAgent = String(req.body?.userAgent || req.headers["user-agent"] || "").slice(0, 300);
+  const platform = String(req.body?.platform || "").slice(0, 100);
+
+  insertInstallStmt.run(Date.now(), userAgent, platform);
+  res.status(204).end();
+});
+
+app.get("/admin", requireAdminAuth, (_req, res) => {
+  res.sendFile(path.join(__dirname, "admin", "index.html"));
+});
+
+app.get("/admin/api/stats", requireAdminAuth, (_req, res) => {
+  res.json({
+    live: getLiveStats(),
+    allTime: {
+      totalRooms: countRoomsStmt.get().total,
+      totalVisits: sumVisitsStmt.get().total,
+      distinctNames: countNamesStmt.get().total,
+      installs: countInstallsStmt.get().total
+    },
+    recentInstalls: recentInstallsStmt.all()
+  });
 });
 
 app.use(express.static(path.join(__dirname, "public")));

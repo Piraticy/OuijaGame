@@ -1938,7 +1938,22 @@ window.addEventListener("appinstalled", () => {
   deferredInstallPrompt = null;
   updateInstallUi();
   setStatus("Ouija Online was installed on this device.");
+  reportInstall();
 });
+
+function reportInstall() {
+  fetch("/api/install", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      userAgent: navigator.userAgent,
+      platform: navigator.userAgentData?.platform || navigator.platform || ""
+    }),
+    keepalive: true
+  }).catch(() => {
+    // Install already happened locally; losing the analytics ping isn't worth surfacing.
+  });
+}
 
 window.addEventListener("keydown", (event) => {
   if (!welcomeScreenElement.classList.contains("is-hidden")) {
