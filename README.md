@@ -4,9 +4,20 @@ A small multiplayer Ouija-style browser game built with Node, Express, and Socke
 
 ## Version
 
-- Current version: `2.0.5`
+- Current version: `2.0.6`
 - Created by `Piraticy`
 - Source: [github.com/Piraticy/OuijaGame](https://github.com/Piraticy/OuijaGame)
+
+## What's New In 2.0.6
+
+- Fixed a mobile layout bug where the board's desktop-only negative top margin (used to tuck it
+  under the candles) wasn't reset on the stacked mobile layout, clipping the title/sun/moon off
+  the top of the board
+- Removed an oversized fixed minimum height on the board that was reserving up to 70% of the
+  screen regardless of the board's actual size, leaving a large dead-space gap before the rest of
+  the page
+- Tightened card padding and spacing on mobile so the whole board plus the name/room/enter
+  controls now fit in the first screen on a phone, with no scrolling required to start playing
 
 ## What's New In 2.0.5
 
